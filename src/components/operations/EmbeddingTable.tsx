@@ -69,7 +69,7 @@ export default function EmbeddingTable() {
       {result && (
         <>
           {/* Stats cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
             <StatCard label="Vocabulary" value={result.shape[0].toLocaleString()} unit="tokens" onClick={() => setShowTokens(!showTokens)} />
             <StatCard label="Dimension" value={result.shape[1].toString()} unit="d" />
             <StatCard label="Mean Norm" value={result.stats.meanNorm.toFixed(2)} />
@@ -280,17 +280,19 @@ export default function EmbeddingTable() {
 function StatCard({ label, value, unit, onClick }: { label: string; value: string; unit?: string; onClick?: () => void }) {
   return (
     <div
-      className={`card-editorial p-3 text-center ${onClick ? "cursor-pointer hover:border-burgundy/30" : ""}`}
+      className={`card-editorial p-2 text-center ${onClick ? "cursor-pointer hover:border-burgundy/40 hover:shadow-editorial-md group" : ""}`}
       onClick={onClick}
     >
-      <div className="font-sans text-[10px] text-slate uppercase tracking-wider">
-        {label}
-        {onClick && <span className="ml-1 text-burgundy/50">▸</span>}
-      </div>
-      <div className="font-sans text-sm font-semibold mt-0.5">
+      <div className="font-sans text-[10px] text-slate uppercase tracking-wider">{label}</div>
+      <div className="font-sans text-xs font-semibold mt-0.5">
         {value}
-        {unit && <span className="font-sans text-[10px] text-slate font-normal ml-1">{unit}</span>}
+        {unit && <span className="font-sans text-[10px] text-slate font-normal ml-0.5">{unit}</span>}
       </div>
+      {onClick && (
+        <div className="font-sans text-[9px] text-burgundy/60 group-hover:text-burgundy mt-0.5">
+          click to view
+        </div>
+      )}
     </div>
   );
 }
