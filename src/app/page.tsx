@@ -8,6 +8,9 @@ import StatusBar from "@/components/layout/StatusBar";
 import ModelLoader from "@/components/layout/ModelLoader";
 import { useModel } from "@/context/ModelContext";
 import type { TabGroup } from "@/types/model";
+import EmbeddingTable from "@/components/operations/EmbeddingTable";
+import TokenTrajectory from "@/components/operations/TokenTrajectory";
+import VocabularyMap from "@/components/operations/VocabularyMap";
 
 function VectorscopeApp() {
   const { backendStatus, checkBackend } = useModel();
@@ -37,12 +40,17 @@ function VectorscopeApp() {
         {!modelLoaded ? (
           <ModelLoader />
         ) : (
-          <div className="max-w-6xl mx-auto">
-            <div className="card-editorial p-8 text-center">
-              <p className="font-body text-body-lg text-slate">
-                {activeTab} operation — coming in Phase 1
-              </p>
-            </div>
+          <div className="max-w-7xl mx-auto">
+            {activeTab === "embedding-table" && <EmbeddingTable />}
+            {activeTab === "token-trajectory" && <TokenTrajectory />}
+            {activeTab === "vocabulary-map" && <VocabularyMap />}
+            {!["embedding-table", "token-trajectory", "vocabulary-map"].includes(activeTab) && (
+              <div className="card-editorial p-8 text-center">
+                <p className="font-body text-body-lg text-slate">
+                  {activeTab} — coming in Phase 2
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>

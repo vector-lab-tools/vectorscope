@@ -10,7 +10,7 @@ David M. Berry, University of Sussex
 
 ## Version
 
-0.1.0 (15 April 2026)
+0.2.0 (15 April 2026)
 
 ## What is Vectorscope?
 

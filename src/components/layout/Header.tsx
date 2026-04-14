@@ -3,6 +3,9 @@
 import { APP_NAME, APP_TAGLINE, VERSION } from "@/lib/version";
 import { useModel } from "@/context/ModelContext";
 import { Cpu, Loader2 } from "lucide-react";
+import AboutDialog from "./AboutDialog";
+import HelpDialog from "./HelpDialog";
+import SettingsDialog from "./SettingsDialog";
 
 export default function Header() {
   const { backendStatus } = useModel();
@@ -55,6 +58,13 @@ export default function Header() {
                 ? backendStatus.device
                 : "Disconnected"}
             </span>
+          </div>
+
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 ml-2 border-l border-parchment-dark pl-3">
+            <AboutDialog />
+            <HelpDialog />
+            <SettingsDialog />
           </div>
         </div>
       </div>

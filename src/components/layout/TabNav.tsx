@@ -32,7 +32,7 @@ export default function TabNav({
               onTabChange(group.tabs[0].id);
             }}
             className={cn(
-              "px-5 py-3 font-sans text-body-sm font-medium border-b-2 transition-colors",
+              "px-4 py-2 font-sans text-body-sm font-medium border-b-2 transition-colors",
               activeGroup === groupId
                 ? "border-burgundy text-burgundy"
                 : "border-transparent text-slate hover:text-ink hover:border-parchment-dark"
@@ -51,7 +51,7 @@ export default function TabNav({
             onClick={() => onTabChange(tab.id)}
             disabled={!modelLoaded}
             className={cn(
-              "px-4 py-2 font-sans text-caption font-medium transition-colors",
+              "px-3 py-1.5 font-sans text-caption font-medium transition-colors whitespace-nowrap",
               activeTab === tab.id
                 ? "text-burgundy bg-card border-b border-burgundy"
                 : modelLoaded
