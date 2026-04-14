@@ -8,7 +8,7 @@ from __future__ import annotations
 import gc
 import torch
 import psutil
-from transformers import AutoModel, AutoTokenizer, AutoConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 from dataclasses import dataclass
 from typing import Optional
 
@@ -58,7 +58,7 @@ class ModelSession:
         if self.device == "mps":
             load_kwargs["attn_implementation"] = "eager"
 
-        self.model = AutoModel.from_pretrained(model_id, **load_kwargs)
+        self.model = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
 
         if self.device == "mps":
             self.model = self.model.to(self.device)
@@ -103,38 +103,46 @@ class ModelSession:
 
     def _get_embedding_table(self) -> torch.Tensor:
         """Get input embedding weight matrix, handling architecture differences."""
-        model = self.model
-        # Try common attribute paths
-        for path in [
-            "embed_tokens",           # Llama, Qwen, Mistral
-            "wte",                    # GPT-2
-            "embeddings.word_embeddings",  # BERT
-        ]:
-            obj = model
-            for attr in path.split("."):
-                obj = getattr(obj, attr, None)
-                if obj is None:
-                    break
-            if obj is not None and hasattr(obj, "weight"):
-                return obj.weight
+        # With AutoModelForCausalLM, the base model is often nested under .model or .transformer
+        candidates = [self.model, getattr(self.model, "model", None), getattr(self.model, "transformer", None)]
+        for base in candidates:
+            if base is None:
+                continue
+            for path in [
+                "embed_tokens",           # Llama, Qwen, Mistral
+                "wte",                    # GPT-2
+                "embeddings.word_embeddings",  # BERT
+            ]:
+                obj = base
+                for attr in path.split("."):
+                    obj = getattr(obj, attr, None)
+                    if obj is None:
+                        break
+                if obj is not None and hasattr(obj, "weight"):
+                    return obj.weight
 
         # Fallback: search for first Embedding layer
-        for module in model.modules():
+        for module in self.model.modules():
             if isinstance(module, torch.nn.Embedding):
                 return module.weight
 
         raise ValueError("Could not find embedding table")
 
     def _get_lm_head_weight(self) -> Optional[torch.Tensor]:
-        """Get output unembedding (lm_head) weight matrix, if separate."""
-        # lm_head is on the parent model (e.g. GPT2LMHeadModel), but we load
-        # with AutoModel which gives the base. Try common paths anyway.
-        model = self.model
+        """Get output unembedding (lm_head) weight matrix."""
         for attr in ["lm_head", "cls", "output"]:
-            head = getattr(model, attr, None)
+            head = getattr(self.model, attr, None)
             if head is not None and hasattr(head, "weight"):
                 return head.weight
         return None
+
+    def _get_base_model(self):
+        """Get the base transformer model (unwrapped from CausalLM wrapper)."""
+        for attr in ["model", "transformer", "bert"]:
+            base = getattr(self.model, attr, None)
+            if base is not None:
+                return base
+        return self.model
 
     def get_available_memory_mb(self) -> int:
         return int(psutil.virtual_memory().available / (1024 * 1024))

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import type { EmbeddingTableResult } from "@/types/model";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import Plot3DWrapper from "@/components/Plot3DWrapper";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -110,7 +111,7 @@ export default function EmbeddingTable() {
             <h3 className="font-sans text-xs font-semibold text-slate mb-2">
               Vocabulary Embedding Space (PCA → 3D, {result.sampleTokens.length.toLocaleString()} tokens sampled)
             </h3>
-            <Plot
+            <Plot3DWrapper
               data={[
                 {
                   type: "scatter3d",

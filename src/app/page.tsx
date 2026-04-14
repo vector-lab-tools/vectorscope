@@ -11,19 +11,21 @@ import type { TabGroup } from "@/types/model";
 import EmbeddingTable from "@/components/operations/EmbeddingTable";
 import TokenTrajectory from "@/components/operations/TokenTrajectory";
 import VocabularyMap from "@/components/operations/VocabularyMap";
+import ProjectionHead from "@/components/operations/ProjectionHead";
+import WeightComparison from "@/components/operations/WeightComparison";
+import LayerProbe from "@/components/operations/LayerProbe";
 
 function VectorscopeApp() {
   const { backendStatus, checkBackend } = useModel();
   const [activeGroup, setActiveGroup] = useState<TabGroup>("inspect");
   const [activeTab, setActiveTab] = useState("embedding-table");
+  const modelLoaded = !!backendStatus.model;
 
   useEffect(() => {
     checkBackend();
-    const interval = setInterval(checkBackend, 5000);
+    const interval = setInterval(checkBackend, modelLoaded ? 30000 : 5000);
     return () => clearInterval(interval);
-  }, [checkBackend]);
-
-  const modelLoaded = !!backendStatus.model;
+  }, [checkBackend, modelLoaded]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -42,12 +44,15 @@ function VectorscopeApp() {
         ) : (
           <div className="max-w-7xl mx-auto">
             {activeTab === "embedding-table" && <EmbeddingTable />}
+            {activeTab === "projection-head" && <ProjectionHead />}
+            {activeTab === "weight-comparison" && <WeightComparison />}
             {activeTab === "token-trajectory" && <TokenTrajectory />}
+            {activeTab === "layer-probe" && <LayerProbe />}
             {activeTab === "vocabulary-map" && <VocabularyMap />}
-            {!["embedding-table", "token-trajectory", "vocabulary-map"].includes(activeTab) && (
-              <div className="card-editorial p-8 text-center">
-                <p className="font-body text-body-lg text-slate">
-                  {activeTab} — coming in Phase 2
+            {!["embedding-table", "projection-head", "weight-comparison", "token-trajectory", "layer-probe", "vocabulary-map"].includes(activeTab) && (
+              <div className="card-editorial p-4 text-center">
+                <p className="font-sans text-xs text-slate">
+                  {activeTab} — coming in Phase 3
                 </p>
               </div>
             )}

@@ -2,10 +2,12 @@
 
 import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { TokenTrajectoryResult } from "@/types/model";
 import { projectPCA3D } from "@/lib/geometry/pca";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import Plot3DWrapper from "@/components/Plot3DWrapper";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -14,6 +16,7 @@ export default function TokenTrajectory() {
   const [result, setResult] = useState<TokenTrajectoryResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deepDiveOpen, setDeepDiveOpen] = useState(false);
 
   const run = useCallback(async () => {
     if (!text.trim()) return;
@@ -48,11 +51,11 @@ export default function TokenTrajectory() {
   }, [result]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4">
       {/* Controls */}
-      <div className="card-editorial p-6">
+      <div className="card-editorial p-4">
         <div className="flex items-center gap-4">
-          <label className="font-sans text-caption text-slate">
+          <label className="font-sans text-[11px] text-slate">
             Input text
             <input
               type="text"
@@ -70,33 +73,33 @@ export default function TokenTrajectory() {
           >
             {loading ? "Tracing..." : "Trace"}
           </button>
-          {error && <span className="text-red-600 font-sans text-caption">{error}</span>}
+          {error && <span className="text-red-600 font-sans text-[11px]">{error}</span>}
         </div>
       </div>
 
       {result && (
         <>
           {/* Token info */}
-          <div className="card-editorial p-4">
-            <div className="flex items-center gap-4 font-sans text-caption">
+          <div className="card-editorial p-3">
+            <div className="flex items-center gap-2 flex-wrap font-sans text-[11px]">
               <span className="text-slate">Tokens:</span>
               {result.tokens.map((t, i) => (
-                <span key={i} className="bg-parchment px-2 py-1 rounded font-mono text-sm">
+                <span key={i} className="bg-cream px-1.5 py-0.5 rounded-sm font-mono text-[10px]">
                   {t}
-                  <span className="text-slate ml-1">({result.tokenIds[i]})</span>
+                  <span className="text-slate ml-0.5">({result.tokenIds[i]})</span>
                 </span>
               ))}
-              <span className="text-slate ml-4">{result.layers.length} layers</span>
+              <span className="text-slate ml-2">{result.layers.length} layers</span>
             </div>
           </div>
 
           {/* 3D trajectory */}
           {trajectoryCoords && (
-            <div className="card-editorial p-4">
-              <h3 className="font-heading text-heading-sm mb-4">
+            <div className="card-editorial p-3">
+              <h3 className="font-sans text-xs font-semibold text-slate mb-2">
                 Token Trajectory through Layers (PCA → 3D)
               </h3>
-              <Plot
+              <Plot3DWrapper
                 data={[
                   // Trajectory line
                   {
@@ -168,8 +171,8 @@ export default function TokenTrajectory() {
 
           {/* Layer similarity chart */}
           {result.layerSimilarities.length > 0 && (
-            <div className="card-editorial p-4">
-              <h3 className="font-heading text-heading-sm mb-4">
+            <div className="card-editorial p-3">
+              <h3 className="font-sans text-xs font-semibold text-slate mb-2">
                 Layer-to-Layer Cosine Similarity
               </h3>
               <Plot
@@ -199,8 +202,8 @@ export default function TokenTrajectory() {
           )}
 
           {/* Norm profile */}
-          <div className="card-editorial p-4">
-            <h3 className="font-heading text-heading-sm mb-4">Norm Profile across Layers</h3>
+          <div className="card-editorial p-3">
+            <h3 className="font-sans text-xs font-semibold text-slate mb-2">Norm Profile across Layers</h3>
             <Plot
               data={[
                 {
@@ -224,6 +227,66 @@ export default function TokenTrajectory() {
               config={{ displayModeBar: false }}
               style={{ width: "100%" }}
             />
+          </div>
+
+          {/* Deep dive */}
+          <div className="card-editorial">
+            <button
+              onClick={() => setDeepDiveOpen(!deepDiveOpen)}
+              className="w-full flex items-center justify-between px-4 py-2 font-sans text-xs font-medium text-slate hover:text-ink transition-colors"
+            >
+              <span>Deep Dive</span>
+              {deepDiveOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            {deepDiveOpen && (
+              <div className="px-4 pb-4 border-t border-parchment">
+                <h4 className="font-sans text-[11px] font-semibold text-slate uppercase tracking-wider mb-2 mt-3">
+                  Per-Layer Statistics (Token 0: &ldquo;{result.tokens[0]}&rdquo;)
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full font-mono text-[10px]">
+                    <thead>
+                      <tr className="border-b border-parchment">
+                        <th className="p-1 text-left text-slate font-normal">Layer</th>
+                        <th className="p-1 text-right text-slate font-normal">Norm</th>
+                        <th className="p-1 text-right text-slate font-normal">Cos to Next</th>
+                        <th className="p-1 text-right text-slate font-normal">Cos to Input</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.layers.map((l, i) => (
+                        <tr key={i} className="border-b border-parchment">
+                          <td className="p-1 text-slate">{l.layer}</td>
+                          <td className="p-1 text-right">{l.norms[0].toFixed(2)}</td>
+                          <td className="p-1 text-right">
+                            {i < result.layerSimilarities.length
+                              ? result.layerSimilarities[i].toFixed(4)
+                              : "—"}
+                          </td>
+                          <td className="p-1 text-right">
+                            {i === 0 ? "1.0000" : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3">
+                  <h4 className="font-sans text-[11px] font-semibold text-slate uppercase tracking-wider mb-2">
+                    Summary
+                  </h4>
+                  <table className="font-mono text-[11px]">
+                    <tbody>
+                      <tr className="border-b border-parchment"><td className="py-1 pr-4 text-slate">Layers</td><td className="py-1 text-right">{result.layers.length}</td></tr>
+                      <tr className="border-b border-parchment"><td className="py-1 pr-4 text-slate">Tokens</td><td className="py-1 text-right">{result.tokens.length}</td></tr>
+                      <tr className="border-b border-parchment"><td className="py-1 pr-4 text-slate">Norm range</td><td className="py-1 text-right">{Math.min(...result.layers.map(l => l.norms[0])).toFixed(2)} — {Math.max(...result.layers.map(l => l.norms[0])).toFixed(2)}</td></tr>
+                      <tr className="border-b border-parchment"><td className="py-1 pr-4 text-slate">Mean layer similarity</td><td className="py-1 text-right">{result.layerSimilarities.length > 0 ? (result.layerSimilarities.reduce((a, b) => a + b, 0) / result.layerSimilarities.length).toFixed(4) : "—"}</td></tr>
+                      <tr className="border-b border-parchment"><td className="py-1 pr-4 text-slate">Min layer similarity</td><td className="py-1 text-right">{result.layerSimilarities.length > 0 ? Math.min(...result.layerSimilarities).toFixed(4) : "—"}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

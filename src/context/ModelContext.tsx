@@ -45,17 +45,31 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${BACKEND_URL}/status`);
       if (res.ok) {
         const data = await res.json();
-        setBackendStatus({
+        const next: BackendStatus = {
           status: "connected",
           model: parseModelInfo(data.model),
           device: data.device,
           availableMemoryMb: data.available_memory_mb,
+        };
+        setBackendStatus(prev => {
+          if (
+            prev.status === next.status &&
+            prev.device === next.device &&
+            prev.model?.modelId === next.model?.modelId
+          ) {
+            return prev; // no change — skip re-render
+          }
+          return next;
         });
       } else {
-        setBackendStatus(prev => ({ ...prev, status: "disconnected" }));
+        setBackendStatus(prev =>
+          prev.status === "disconnected" ? prev : { ...prev, status: "disconnected" }
+        );
       }
     } catch {
-      setBackendStatus(prev => ({ ...prev, status: "disconnected" }));
+      setBackendStatus(prev =>
+        prev.status === "disconnected" ? prev : { ...prev, status: "disconnected" }
+      );
     }
   }, []);
 

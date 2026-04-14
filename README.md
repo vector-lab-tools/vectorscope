@@ -10,7 +10,7 @@ David M. Berry, University of Sussex
 
 ## Version
 
-0.2.0 (15 April 2026)
+0.2.2 (15 April 2026)
 
 ## What is Vectorscope?
 
@@ -26,22 +26,22 @@ It is a companion tool to [Manifold Atlas](https://github.com/dmberry/manifold-a
 ## Operations
 
 ### Inspect (component-level weight examination)
-- **Embedding Table** — Load and visualise the input embedding matrix
-- **Projection Head** — Examine the lm_head / unembedding weights
-- **Weight Comparison** — Input embeddings vs output unembedding
-- **Attention Inspector** — Attention pattern visualisation
+- **Embedding Table** — Load and visualise the input embedding matrix (PCA 3D scatter, norm histogram, deep dive) ✓
+- **Projection Head** — Examine the lm_head / unembedding weights (3D scatter, stats, weight-tying detection) ✓
+- **Weight Comparison** — Input embeddings vs output unembedding (cosine similarity distribution, norm scatter) ✓
+- **Attention Inspector** — Attention pattern visualisation (Phase 3)
 
 ### Trace (following data through the pipeline)
-- **Token Trajectory** — Trace a token through all layers
-- **Layer Probe** — Hidden states at a specific layer
-- **Full Trace** — Tokens → vectors → manifold → vectors → dictionary
-- **Manifold Formation** — Animated layer-by-layer geometry
+- **Token Trajectory** — Trace a token through all layers (3D trajectory, layer similarity, norm profile) ✓
+- **Layer Probe** — Hidden states at a specific layer (similarity heatmap, norm bars) ✓
+- **Full Trace** — Tokens → vectors → manifold → vectors → dictionary (Phase 2)
+- **Manifold Formation** — Animated layer-by-layer geometry (Phase 3)
 
 ### Critique (theoretical/analytical instruments)
-- **Vocabulary Map** — Global topology of the vocabulary embedding space
-- **Isotropy Analysis** — Effective dimensionality and direction concentration
-- **Cross-Model Anatomy** — Compare internal geometry across models
-- **Precision Degradation** — Signal Degradation Laboratory (FP32 → BF16 → INT8 → INT4)
+- **Vocabulary Map** — Global topology of the vocabulary embedding space (3D scatter with search/highlight, norm distribution) ✓
+- **Isotropy Analysis** — Effective dimensionality and direction concentration (Phase 4)
+- **Cross-Model Anatomy** — Compare internal geometry across models (Phase 4)
+- **Precision Degradation** — Signal Degradation Laboratory (FP32 → BF16 → INT8 → INT4) (Phase 4)
 
 ## Supported Models
 
