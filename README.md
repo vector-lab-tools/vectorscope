@@ -4,7 +4,7 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.2.6
+**Version:** 0.2.7
 **Date:** 15 April 2026
 **Licence:** MIT
 
@@ -92,36 +92,104 @@ Any HuggingFace `AutoModelForCausalLM`-compatible model can be loaded. Primary d
 
 ## Getting Started
 
+Vectorscope is two coordinated processes: a Python backend that loads the model and runs the forward passes, and a Next.js frontend that renders the interface. Both need to be running at the same time, in two separate terminals. The sections below walk through a first-time setup from a freshly cloned repository.
+
 ### Prerequisites
 
-- Python 3.9+
-- Node.js 18+
-- npm
+Before you begin, install the following. All are free and widely packaged:
 
-### 1. Start the Python backend
+- **Python 3.9 or newer** (3.11 recommended). Check with `python3 --version`. On macOS, `brew install python@3.11`; on Ubuntu/Debian, `sudo apt install python3 python3-venv python3-pip`; on Windows, use [python.org](https://www.python.org/downloads/) and tick "Add Python to PATH".
+- **Node.js 18 or newer** (20 LTS recommended) and **npm**. Check with `node --version` and `npm --version`. Install via [nodejs.org](https://nodejs.org/) or a version manager such as [nvm](https://github.com/nvm-sh/nvm) / [fnm](https://github.com/Schniz/fnm).
+- **Git**, to clone the repository.
+- **Disk space for model weights.** HuggingFace caches models to `~/.cache/huggingface/`. GPT-2 is ~500 MB, Llama 3.2 1B is ~2.5 GB, Mistral 7B is ~14 GB. Budget accordingly.
+- **Memory.** 8 GB RAM is enough for GPT-2. For 1B–3B models you want 16 GB. For 7B models, 24 GB unified memory (Apple Silicon) or equivalent.
+
+**Optional but recommended on Apple Silicon:** PyTorch's MPS backend is used automatically when available, which makes forward passes several times faster than CPU. No extra install step is needed, but macOS 13.3+ is required for MPS to work reliably.
+
+**Optional:** a [HuggingFace account](https://huggingface.co/join) and access token. Some models (Llama, Mistral) are gated and require you to accept a licence on the model page and authenticate with `huggingface-cli login` before downloading. GPT-2 and Qwen3 are ungated.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/dmberry/vectorscope.git
+cd vectorscope
+```
+
+### 2. Set up and start the Python backend
+
+Open a terminal in the project root and run:
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate        # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install --upgrade pip
 pip install -r requirements.txt
 python main.py
 ```
 
-The backend runs on `localhost:8000`.
+The first `pip install` pulls down PyTorch, Transformers, FastAPI, scikit-learn and friends. On a fast connection this takes 2–5 minutes; on a slow one, considerably more. Subsequent runs reuse the virtual environment instantly.
 
-### 2. Start the frontend
+When the backend is ready you will see something like:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Application startup complete.
+```
+
+Leave this terminal running. You can sanity-check the backend by visiting [http://localhost:8000/api/health](http://localhost:8000/api/health) in a browser; it should return a small JSON payload.
+
+**To stop the backend:** press `Ctrl+C` in the terminal. **To resume later:** `cd backend && source .venv/bin/activate && python main.py`.
+
+### 3. Install and start the frontend
+
+Open a *second* terminal in the project root (leave the backend running in the first) and run:
 
 ```bash
 npm install
 npm run dev
 ```
 
-The frontend runs on `localhost:3000`.
+The first `npm install` fetches Next.js, React, Plotly, Three.js and the rest of the frontend tree (~1–2 GB of `node_modules`, 1–3 minutes on a fast connection). Subsequent runs are instant.
 
-### 3. Load a model
+When the dev server is ready:
 
-Select a model from the preset list or enter any HuggingFace model ID. The first load will download the model weights to `~/.cache/huggingface/`.
+```
+▲ Next.js 16.2.3
+- Local:   http://localhost:3000
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser. If the header status indicator is green, the frontend has found the backend.
+
+### 4. Load a model and start exploring
+
+In the header, open the model selector and choose a preset (start with **GPT-2 124M**, the smallest and fastest) or paste any HuggingFace `AutoModelForCausalLM`-compatible model ID. Click **Load**.
+
+The first time you load a given model the backend downloads the weights to `~/.cache/huggingface/`. GPT-2 takes about thirty seconds on a fast connection. Larger models take longer. Subsequent loads are near-instant because the weights are cached.
+
+Once the status bar shows the model is loaded, pick an operation from the **Inspect / Trace / Critique** tab groups. Every operation has a collapsible introduction at the top with a *Learn more* modal, and a *Deep Dive* panel at the bottom with the full quantitative data. Try **Embedding Table** first — it is the cheapest operation and a good smoke test.
+
+### Troubleshooting
+
+- **`command not found: python3`** — install Python from the prerequisites above, or use `python` if your system uses that name.
+- **`ModuleNotFoundError: No module named 'torch'`** — the virtual environment is not activated. Re-run `source backend/.venv/bin/activate`.
+- **`EADDRINUSE: port 3000 already in use`** — another Next.js dev server is running. Either stop it, or start this one on a different port with `PORT=3001 npm run dev`.
+- **Frontend says "Backend unreachable"** — the backend process is not running, or it started on a non-default port. Confirm [http://localhost:8000/api/health](http://localhost:8000/api/health) returns JSON.
+- **Out of memory loading a large model** — pick a smaller preset. GPT-2 runs comfortably in 8 GB; anything above 1B parameters wants 16 GB or more. The backend uses fp16/bf16 where the hardware supports it, but there is no quantisation yet.
+- **Llama / Mistral 403 on download** — these are gated. Accept the licence on the HuggingFace model page, then `pip install huggingface_hub && huggingface-cli login` inside the activated backend venv.
+- **Slow generation on Apple Silicon** — confirm MPS is in use. The backend logs the device at startup. If it reports `cpu`, your PyTorch build is CPU-only; reinstall with the official wheel from [pytorch.org](https://pytorch.org/get-started/locally/).
+
+### Packaging and distribution (notes for future work)
+
+Vectorscope is currently distributed as source, run in development mode. This is the right default for a research instrument where users may want to patch the Python or the React side mid-session. A few packaging options are on the roadmap for users who would prefer a one-click install:
+
+- **Desktop app via Tauri or Electron.** Bundle the frontend build and spawn the Python backend as a sidecar process. Tauri produces much smaller binaries than Electron and is the likely choice. A single `.dmg`, `.msi`, or `.AppImage` that launches both halves would remove most of the friction above.
+- **`pipx` / `uvx` installable CLI.** Publish the backend as a PyPI package (`pip install vectorscope` or `uvx vectorscope`) that ships a pre-built static frontend as package data and serves it from FastAPI on a single port. The whole thing becomes `vectorscope` on the command line.
+- **Docker Compose.** A two-service compose file (`backend`, `frontend`) with a pre-configured HuggingFace cache volume. Useful for reproducible lab setups and for running on a workstation from a laptop over the network.
+- **Pre-built frontend served by the backend.** The simplest intermediate step: `npm run build` once, commit or ship the `.next` output, and have FastAPI serve it as static files. Reduces the "two terminals" requirement to one without introducing a new packaging technology.
+- **Model bundle presets.** An opt-in first-run downloader that fetches GPT-2 to the HuggingFace cache so new users have something to click on immediately, rather than waiting for the first model load.
+
+None of this is implemented yet. Contributions welcome — open an issue on GitHub if you have preferences.
 
 ## Architecture
 
@@ -189,7 +257,7 @@ Vectorscope connects to a critical theory of vector space and AI media developed
 - Berry, D. M. (2026c) *Artificial Intelligence and Critical Theory*. Manchester University Press.
 - Berry, D. M. (2025) 'Synthetic Media and Computational Capitalism: Towards a Critical Theory of Artificial Intelligence', *AI & Society*. Available at: https://doi.org/10.1007/s00146-025-02265-2
 - Berry, D. M. (2014) *Critical Theory and the Digital*. Bloomsbury.
-- Impett, L. and Offert, F. (2026) on vector media from a media theory perspective.
+- Impett, L. and Offert, F. (2026) *Vector Media*. University of Minnesota Press.
 
 ## Roadmap
 
