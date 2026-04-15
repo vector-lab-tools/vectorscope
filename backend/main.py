@@ -5,6 +5,7 @@ Vectorscope backend — FastAPI server for model inspection.
 import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from models.session import session
@@ -13,6 +14,9 @@ from operations.token_trajectory import get_token_trajectory
 from operations.projection_head import get_projection_head
 from operations.weight_comparison import get_weight_comparison
 from operations.layer_probe import get_layer_probe
+from operations.full_trace import stream_full_trace
+from operations.attention import get_attention_at_layer, get_attention_head_across_layers
+from operations.manifold_formation import get_manifold_formation
 
 app = FastAPI(title="Vectorscope Backend", version="0.1.0")
 
@@ -43,6 +47,25 @@ class WeightComparisonRequest(BaseModel):
 class LayerProbeRequest(BaseModel):
     text: str
     layer: int
+
+
+class FullTraceRequest(BaseModel):
+    text: str
+    top_k: int = 20
+
+
+class AttentionLayerRequest(BaseModel):
+    text: str
+    layer: int
+
+
+class AttentionHeadRequest(BaseModel):
+    text: str
+    head: int
+
+
+class ManifoldFormationRequest(BaseModel):
+    text: str
 
 
 class TokenTrajectoryRequest(BaseModel):
@@ -126,6 +149,49 @@ async def layer_probe(req: LayerProbeRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/attention-layer")
+async def attention_layer(req: AttentionLayerRequest):
+    try:
+        result = await asyncio.to_thread(get_attention_at_layer, req.text, req.layer)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/attention-head")
+async def attention_head(req: AttentionHeadRequest):
+    try:
+        result = await asyncio.to_thread(get_attention_head_across_layers, req.text, req.head)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/manifold-formation")
+async def manifold_formation(req: ManifoldFormationRequest):
+    try:
+        result = await asyncio.to_thread(get_manifold_formation, req.text)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/full-trace")
+async def full_trace(req: FullTraceRequest):
+    async def generate():
+        # Run the heavy computation in a thread, collect results, then stream
+        lines = await asyncio.to_thread(lambda: list(stream_full_trace(req.text, req.top_k)))
+        for line in lines:
+            yield line
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
 
 
 if __name__ == "__main__":

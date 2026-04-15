@@ -10,7 +10,7 @@ David M. Berry, University of Sussex
 
 ## Version
 
-0.2.2 (15 April 2026)
+0.2.3 (16 April 2026)
 
 ## What is Vectorscope?
 
@@ -29,13 +29,13 @@ It is a companion tool to [Manifold Atlas](https://github.com/dmberry/manifold-a
 - **Embedding Table** — Load and visualise the input embedding matrix (PCA 3D scatter, norm histogram, deep dive) ✓
 - **Projection Head** — Examine the lm_head / unembedding weights (3D scatter, stats, weight-tying detection) ✓
 - **Weight Comparison** — Input embeddings vs output unembedding (cosine similarity distribution, norm scatter) ✓
-- **Attention Inspector** — Attention pattern visualisation (Phase 3)
+- **Attention Inspector** — Multi-head attention heatmaps, per-head entropy, pattern classification ✓
 
 ### Trace (following data through the pipeline)
 - **Token Trajectory** — Trace a token through all layers (3D trajectory, layer similarity, norm profile) ✓
 - **Layer Probe** — Hidden states at a specific layer (similarity heatmap, norm bars) ✓
-- **Full Trace** — Tokens → vectors → manifold → vectors → dictionary (Phase 2)
-- **Manifold Formation** — Animated layer-by-layer geometry (Phase 3)
+- **Full Trace** — Complete tokens → embeddings → layers → predictions pipeline with NDJSON streaming ✓
+- **Manifold Formation** — Animated layer-by-layer PCA geometry with playback controls ✓
 
 ### Critique (theoretical/analytical instruments)
 - **Vocabulary Map** — Global topology of the vocabulary embedding space (3D scatter with search/highlight, norm distribution) ✓

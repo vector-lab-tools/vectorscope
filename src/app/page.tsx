@@ -14,6 +14,9 @@ import VocabularyMap from "@/components/operations/VocabularyMap";
 import ProjectionHead from "@/components/operations/ProjectionHead";
 import WeightComparison from "@/components/operations/WeightComparison";
 import LayerProbe from "@/components/operations/LayerProbe";
+import FullTrace from "@/components/operations/FullTrace";
+import AttentionInspector from "@/components/operations/AttentionInspector";
+import ManifoldFormation from "@/components/operations/ManifoldFormation";
 
 function VectorscopeApp() {
   const { backendStatus, checkBackend } = useModel();
@@ -48,8 +51,11 @@ function VectorscopeApp() {
             {activeTab === "weight-comparison" && <WeightComparison />}
             {activeTab === "token-trajectory" && <TokenTrajectory />}
             {activeTab === "layer-probe" && <LayerProbe />}
+            {activeTab === "full-trace" && <FullTrace />}
+            {activeTab === "attention" && <AttentionInspector />}
+            {activeTab === "manifold-formation" && <ManifoldFormation />}
             {activeTab === "vocabulary-map" && <VocabularyMap />}
-            {!["embedding-table", "projection-head", "weight-comparison", "token-trajectory", "layer-probe", "vocabulary-map"].includes(activeTab) && (
+            {!["embedding-table", "projection-head", "weight-comparison", "token-trajectory", "layer-probe", "full-trace", "attention", "manifold-formation", "vocabulary-map"].includes(activeTab) && (
               <div className="card-editorial p-4 text-center">
                 <p className="font-sans text-xs text-slate">
                   {activeTab} — coming in Phase 3
