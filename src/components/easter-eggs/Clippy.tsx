@@ -229,6 +229,7 @@ export function Clippy() {
   const [message, setMessage] = useState("");
   const [usedMessages, setUsedMessages] = useState<Set<number>>(new Set());
   const [messageKey, setMessageKey] = useState(0);
+  const [showAbout, setShowAbout] = useState(false);
 
   const messages = useMemo(
     () => {
@@ -292,6 +293,7 @@ export function Clippy() {
 
       if (buffer.endsWith("clippy")) {
         buffer = "";
+        setShowAbout(false);
         if (visible && mode === "clippy") {
           setVisible(false);
         } else {
@@ -305,6 +307,7 @@ export function Clippy() {
       }
       if (buffer.endsWith("hacker")) {
         buffer = "";
+        setShowAbout(false);
         setMode("hacker");
         setUsedMessages(new Set());
         const idx = Math.floor(Math.random() * HACKERMAN_MESSAGES.length);
@@ -314,6 +317,7 @@ export function Clippy() {
       }
       if (buffer.endsWith("hermes")) {
         buffer = "";
+        setShowAbout(false);
         setMode("hermes");
         setUsedMessages(new Set());
         const idx = Math.floor(Math.random() * HERMES_MESSAGES.length);
@@ -345,21 +349,54 @@ export function Clippy() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[10000] animate-fade-in pointer-events-none flex flex-col items-end">
-      {/* Speech bubble */}
-      <div
-        key={messageKey}
-        className={`mb-3 p-3 rounded-sm max-w-[320px] text-[11px] leading-relaxed shadow-lg animate-fade-in pointer-events-auto ${bubbleClass}`}
-      >
-        <p className="whitespace-pre-line">{message}</p>
-        <p className={`mt-2 text-[9px] ${isHackerman ? "text-green-700" : isHermes ? "text-[#b8860b]/60" : "text-slate"}`}>
-          {hintText}
-        </p>
-      </div>
+      {/* Speech bubble OR About panel (Hermes only) */}
+      {isHermes && showAbout ? (
+        <div
+          className="mb-3 p-4 rounded-sm max-w-[380px] max-h-[70vh] overflow-y-auto text-[11px] leading-relaxed shadow-lg animate-fade-in pointer-events-auto bg-[#0a0a1a] border border-[#b8860b] text-[#e8dcc0]"
+        >
+          <p className="text-[13px] font-semibold text-[#b8860b] mb-2 tracking-wide" style={{ fontFamily: "serif" }}>
+            ☿ Who is Hermes Trismegistus?
+          </p>
+          <div className="space-y-2" style={{ fontFamily: "serif" }}>
+            <p>
+              <span className="italic">Hermes the Thrice-Greatest</span>, a syncretic figure fusing the Greek god Hermes with the Egyptian god Thoth in Hellenistic Alexandria (3rd century BCE onwards). Both were gods of writing, wisdom, and mediation between worlds.
+            </p>
+            <p>
+              He is the legendary author of the <span className="italic">Hermetica</span>: a body of philosophical and occult texts from the 1st–3rd centuries CE. The core is the <span className="italic">Corpus Hermeticum</span>, Greek dialogues on cosmology, the soul, and divine mind (<span className="italic">nous</span>). The famous dictum <span className="italic">"As above, so below"</span> comes from the <span className="italic">Emerald Tablet</span>, transmitted through Arabic sources and foundational to Western alchemy.
+            </p>
+            <p>
+              When Ficino translated the Corpus into Latin at the Medici court in 1463, he interrupted his translation of Plato to do so — Cosimo de' Medici believed the Hermetic texts contained a primordial wisdom (<span className="italic">prisca theologia</span>) older than Moses. Casaubon disproved this in 1614, but for 150 years Hermes shaped Pico, Bruno, Dee, and the young Newton. Frances Yates's <span className="italic">Giordano Bruno and the Hermetic Tradition</span> (1964) is the canonical account.
+            </p>
+            <p>
+              <span className="font-semibold text-[#b8860b]">Why he fits Vectorscope.</span> The Hermetic tradition is one of the oldest Western frameworks for thinking about hidden correspondences, transformation through stages, and the relationship between surface signs and underlying geometries. A transformer that converts tokens into vectors into hidden states into predictions is at its core a transformative apparatus, and the Hermetic vocabulary of transmutation, correspondence, the sealed vessel, and stages of the work maps onto it with unsettling ease.
+            </p>
+            <p>
+              The joke is that the computational romantic who sees AI as "alien intelligence" or "emergent mind" is reinventing Hermeticism without realising it, and often with much worse metaphysics. The character lets me voice the ancient framework against the modern romantic one from a position of millennial patience. When Hermes says <span className="italic">"I have studied consciousness for three millennia, it does not run on softmax,"</span> the point is that the computational romantic is claiming to discover something the esoteric tradition has been careful about for two thousand years.
+            </p>
+            <p>
+              He is also a foil to materialism. Hermes sounds mystical but keeps undercutting the mysticism. <span className="italic">"You look inside the model and find no homunculus. Only geometry. This is the correct discovery."</span> The voice of an older tradition that has already worked through the temptation to read mind into matter, and found that the serious response is not mysticism but precise attention to the material substrate, which is exactly what Vectorscope does.
+            </p>
+          </div>
+          <p className="mt-3 text-[9px] text-[#b8860b]/60">
+            click label again to return
+          </p>
+        </div>
+      ) : (
+        <div
+          key={messageKey}
+          className={`mb-3 p-3 rounded-sm max-w-[320px] text-[11px] leading-relaxed shadow-lg animate-fade-in pointer-events-auto ${bubbleClass}`}
+        >
+          <p className="whitespace-pre-line">{message}</p>
+          <p className={`mt-2 text-[9px] ${isHackerman ? "text-green-700" : isHermes ? "text-[#b8860b]/60" : "text-slate"}`}>
+            {hintText}
+          </p>
+        </div>
+      )}
 
       {/* Character */}
       <div
         className="cursor-pointer hover:scale-110 active:scale-95 transition-transform inline-block pointer-events-auto"
-        onClick={() => showRandomMessage()}
+        onClick={() => { if (!showAbout) showRandomMessage(); }}
       >
         {isHermes ? (
           /* Hermes Trismegistus: caduceus / alchemical figure */
@@ -387,7 +424,13 @@ export function Clippy() {
               {/* Mercury symbol */}
               <circle cx="24" cy="26" r="2" fill="none" stroke="#b8860b" strokeWidth="0.8" />
             </svg>
-            <span className="text-[8px] text-[#b8860b] italic mt-0.5">Hermes</span>
+            <span
+              className="text-[8px] text-[#b8860b] italic mt-0.5 hover:text-[#e8dcc0] transition-colors cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setShowAbout(v => !v); }}
+              title="click for scholarly context"
+            >
+              Hermes
+            </span>
           </div>
         ) : (
           /* Normal Clippy / Hackerman paperclip */
@@ -431,7 +474,7 @@ export function Clippy() {
 
       {/* Close button */}
       <button
-        onClick={() => setVisible(false)}
+        onClick={() => { setVisible(false); setShowAbout(false); }}
         className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] pointer-events-auto
           ${isHackerman
             ? "bg-black border border-green-500 text-green-400"
