@@ -1222,6 +1222,72 @@ function PanelTokenisation({
   );
 }
 
+function ExplainableTh({
+  col,
+  align,
+  explainCol,
+  setExplainCol,
+}: {
+  col: string;
+  align: "left" | "right";
+  explainCol: string | null;
+  setExplainCol: (v: string | null) => void;
+}) {
+  const active = explainCol === col;
+  return (
+    <th className={`${align === "left" ? "text-left" : "text-right"} py-0.5 px-1.5`}>
+      <button
+        type="button"
+        onClick={() => setExplainCol(active ? null : col)}
+        title="Click for explanation"
+        className={`font-mono text-[10px] underline decoration-dotted underline-offset-2 decoration-slate/40 hover:decoration-burgundy hover:text-burgundy cursor-help transition-colors ${
+          active ? "text-burgundy decoration-burgundy" : "text-slate/70"
+        }`}
+      >
+        {col}
+      </button>
+    </th>
+  );
+}
+
+const GEOMETRY_COLUMN_EXPLANATIONS: Record<string, { title: string; body: string }> = {
+  Layer: {
+    title: "Layer",
+    body:
+      "Depth index inside the transformer. L0 is the post-embedding state (the input vector before any transformer block has touched it). L1 is the output of the first block, L2 of the second, and so on. The last row is the final hidden state that goes into the unembedding / lm_head to produce the next-token distribution.",
+  },
+  PC1: {
+    title: "PC1",
+    body:
+      "First principal component of the global PCA basis. The basis is fitted once across every token × every layer in this generation, so the coordinates of different tokens at different layers are directly comparable. PC1 is the axis along which the whole (token, layer) cloud varies the most.",
+  },
+  PC2: {
+    title: "PC2",
+    body:
+      "Second principal component. Orthogonal to PC1 and carries the next-largest share of variance in the cloud. A token moving substantially in PC2 between layers means that layer rewrote the representation along a direction PC1 alone cannot capture.",
+  },
+  PC3: {
+    title: "PC3",
+    body:
+      "Third principal component. These three axes together are the 3D projection you see in the Layer Progression panel above — the plotted trajectory is exactly (PC1, PC2, PC3) at each layer.",
+  },
+  "‖h‖": {
+    title: "‖h‖ — hidden-state norm",
+    body:
+      "Euclidean length of the token's hidden-state vector at this layer. A rough measure of how much geometric energy the representation carries. Rising norms layer by layer typically mean the model is accumulating information; falling norms mean it is compressing. Norms often balloon in mid-layers and then settle near the final layer, where the representation has to live in the same space the unembedding expects.",
+  },
+  "cos(L, L−1)": {
+    title: "cos(L, L−1) — layer-to-layer cosine",
+    body:
+      "Cosine similarity between this layer's hidden state and the previous layer's for the same token. A value near 1.0 means the transformer block left the representation almost untouched (a passthrough layer). Lower values mean the block rewrote the token more aggressively. Undefined for L0 because there is no previous layer.",
+  },
+  rewrite: {
+    title: "rewrite magnitude",
+    body:
+      "Visual bar showing (1 − cos(L, L−1)) on a fixed 0–1 scale. A full burgundy bar means the layer rewrote this token hard; an almost-empty bar means the layer was nearly a passthrough. It is just the complement of the cosine column, rendered as a bar so you can scan the whole sequence of layers at a glance and spot where the heavy lifting happens.",
+  },
+};
+
 function FocusedTokenDetail({
   state,
   focusedToken,
@@ -1229,6 +1295,7 @@ function FocusedTokenDetail({
   state: GenerationState;
   focusedToken: { str: string; absPos: number; kind: "prompt" | "generated"; stepIdx: number | null };
 }) {
+  const [explainCol, setExplainCol] = useState<string | null>(null);
   if (!state.prompt) return null;
   const promptLen = state.prompt.promptLen;
   const absPos = focusedToken.absPos;
@@ -1382,13 +1449,19 @@ function FocusedTokenDetail({
             <table className="w-full font-mono text-[10px]">
               <thead>
                 <tr className="text-slate/70 border-b border-parchment/60">
-                  <th className="text-left py-0.5 px-1.5">Layer</th>
-                  <th className="text-right py-0.5 px-1.5">PC1</th>
-                  <th className="text-right py-0.5 px-1.5">PC2</th>
-                  <th className="text-right py-0.5 px-1.5">PC3</th>
-                  {hiddenNorms && <th className="text-right py-0.5 px-1.5">‖h‖</th>}
-                  {layerDeltas && <th className="text-right py-0.5 px-1.5">cos(L, L−1)</th>}
-                  {layerDeltas && <th className="text-left py-0.5 px-1.5">rewrite</th>}
+                  <ExplainableTh col="Layer" align="left" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  <ExplainableTh col="PC1" align="right" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  <ExplainableTh col="PC2" align="right" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  <ExplainableTh col="PC3" align="right" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  {hiddenNorms && (
+                    <ExplainableTh col="‖h‖" align="right" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  )}
+                  {layerDeltas && (
+                    <ExplainableTh col="cos(L, L−1)" align="right" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  )}
+                  {layerDeltas && (
+                    <ExplainableTh col="rewrite" align="left" explainCol={explainCol} setExplainCol={setExplainCol} />
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -1445,13 +1518,33 @@ function FocusedTokenDetail({
               </tbody>
             </table>
           </div>
+          {explainCol && GEOMETRY_COLUMN_EXPLANATIONS[explainCol] && (
+            <div className="mt-2 p-2 bg-ivory border border-parchment/70 rounded-sm">
+              <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                <div className="font-sans text-[10px] font-semibold text-burgundy">
+                  {GEOMETRY_COLUMN_EXPLANATIONS[explainCol].title}
+                </div>
+                <button
+                  onClick={() => setExplainCol(null)}
+                  className="font-sans text-[9px] text-slate/70 hover:text-burgundy"
+                  aria-label="Close explanation"
+                >
+                  dismiss ✕
+                </button>
+              </div>
+              <div className="font-sans text-[10px] text-ink leading-relaxed">
+                {GEOMETRY_COLUMN_EXPLANATIONS[explainCol].body}
+              </div>
+            </div>
+          )}
           <p className="font-sans text-[9px] text-slate/70 mt-1">
-            PC1/PC2/PC3 are the token&apos;s coordinates in the global PCA basis fitted
-            across the whole sequence. ‖h‖ is the hidden-state norm at this layer.
-            cos(L, L−1) is the cosine similarity between this layer&apos;s hidden state
-            and the previous — near 1.0 means the layer left the representation nearly
-            untouched, lower values mean stronger rewriting. The burgundy bar shows the
-            rewrite magnitude (1 − cos) on a fixed scale.
+            Click any column heading above for a per-column explanation. PC1/PC2/PC3 are
+            the token&apos;s coordinates in the global PCA basis fitted across the whole
+            sequence. ‖h‖ is the hidden-state norm at this layer. cos(L, L−1) is the
+            cosine similarity between this layer&apos;s hidden state and the previous —
+            near 1.0 means the layer left the representation nearly untouched, lower
+            values mean stronger rewriting. The burgundy bar shows the rewrite magnitude
+            (1 − cos) on a fixed scale.
           </p>
         </div>
       )}
