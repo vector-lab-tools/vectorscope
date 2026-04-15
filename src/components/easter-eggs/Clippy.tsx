@@ -415,33 +415,19 @@ export function Clippy() {
         onClick={() => { if (!showAbout) showRandomMessage(); }}
       >
         {isHermes ? (
-          /* Hermes Trismegistus: caduceus / alchemical figure */
+          /* Hermes Trismegistus: friendly sage — mage emoji on a warm parchment disc */
           <div className="flex flex-col items-center">
-            <svg width="48" height="60" viewBox="0 0 48 60">
-              {/* Hooded head */}
-              <path d="M16 16 Q16 4, 24 4 Q32 4, 32 16" fill="#2a1f3d" stroke="#b8860b" strokeWidth="0.5" />
-              <ellipse cx="24" cy="18" rx="7" ry="8" fill="#e8d0bc" stroke="#cdb09a" strokeWidth="0.5" />
-              {/* Eyes (knowing) */}
-              <ellipse cx="21" cy="17" rx="2" ry="1.5" fill="#2a1f3d" />
-              <ellipse cx="27" cy="17" rx="2" ry="1.5" fill="#2a1f3d" />
-              <circle cx="21" cy="16.5" r="0.6" fill="#b8860b" />
-              <circle cx="27" cy="16.5" r="0.6" fill="#b8860b" />
-              {/* Beard */}
-              <path d="M19 22 Q24 28, 29 22" fill="#8b7355" stroke="none" />
-              {/* Robe */}
-              <path d="M14 26 L24 24 L34 26 L36 55 L12 55 Z" fill="#1a1433" stroke="#b8860b" strokeWidth="0.5" />
-              {/* Caduceus staff */}
-              <line x1="24" y1="30" x2="24" y2="54" stroke="#b8860b" strokeWidth="1.5" />
-              {/* Serpents */}
-              <path d="M20 34 Q24 38, 28 34 Q24 30, 20 34" fill="none" stroke="#b8860b" strokeWidth="1" />
-              <path d="M20 42 Q24 46, 28 42 Q24 38, 20 42" fill="none" stroke="#b8860b" strokeWidth="1" />
-              {/* Wings at top of staff */}
-              <path d="M18 30 L24 28 L30 30" fill="none" stroke="#b8860b" strokeWidth="1" />
-              {/* Mercury symbol */}
-              <circle cx="24" cy="26" r="2" fill="none" stroke="#b8860b" strokeWidth="0.8" />
-            </svg>
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center text-[38px] leading-none shadow-sm"
+              style={{
+                background: "radial-gradient(circle at 35% 30%, #faf3e0 0%, #f0e2bf 70%, #e8d9a8 100%)",
+                border: "1.5px solid #c9a227",
+              }}
+            >
+              <span role="img" aria-label="Hermes Trismegistus">🧙</span>
+            </div>
             <span
-              className="text-[8px] text-[#b8860b] italic mt-0.5 hover:text-[#e8dcc0] transition-colors cursor-pointer"
+              className="text-[8px] text-[#b8860b] italic mt-0.5 hover:text-[#c9a227] transition-colors cursor-pointer"
               onClick={(e) => { e.stopPropagation(); setShowAbout(v => !v); }}
               title="click for scholarly context"
             >

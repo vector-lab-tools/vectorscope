@@ -7,6 +7,7 @@ import type { EmbeddingTableResult } from "@/types/model";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -42,6 +43,26 @@ export default function EmbeddingTable() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Embedding Table"
+        summary="Loads the model's full input embedding matrix and reports its geometric shape. Computes mean norm, effective rank, isotropy, and norm range across the vocabulary, then projects a random sample of tokens into 3D via PCA so you can see where words live in the model's internal space."
+        details={
+          <>
+            <p>
+              The input embedding is the first thing that happens to a token inside a language model. Every item in the vocabulary is assigned a fixed vector in a high-dimensional space. This operation pulls that entire matrix out of the model&apos;s weights and treats it as an object of geometric inspection.
+            </p>
+            <p>
+              The statistics report four properties of that matrix. <strong>Mean norm</strong> is the average length of an embedding vector: a rough measure of how much geometric energy the model assigns to a typical token. <strong>Effective rank</strong> (computed from the Shannon entropy of the singular value spectrum) tells you how many dimensions the model actually uses — a rank of 400 in a 768-dimensional model means a third of the available directions are empty. <strong>Isotropy</strong> measures directional uniformity: a value near 1.0 means the vectors are evenly distributed, a value near 0 means they crowd into a narrow cone.
+            </p>
+            <p>
+              The 3D scatter is a PCA projection of a random sample of tokens. It cannot show you the real topology of a 768-dimensional space, but it can show you clusters, outliers, and anisotropy that would otherwise be invisible.
+            </p>
+            <p>
+              Theoretically, this is the model&apos;s raw ontology before any context is applied. Anisotropy here is the geometric signature of the training corpus. Every downstream operation in Vectorscope starts from this matrix.
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">

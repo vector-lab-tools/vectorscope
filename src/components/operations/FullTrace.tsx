@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -160,6 +161,26 @@ export default function FullTrace() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Full Trace"
+        summary="Streams a complete forward pass stage by stage over NDJSON: tokenisation, input embedding, every transformer layer, and the final output distribution. Reports per-layer norm statistics, cosine similarity between successive layers, and the top predictions with their entropy. A live geometric chronicle of one prompt moving through the entire model."
+        details={
+          <>
+            <p>
+              Full Trace is the most complete single view Vectorscope offers of a forward pass. Instead of stopping at one layer or following one token, it streams every stage of the computation back to the browser as it happens, using NDJSON so you can watch the model think in roughly real time.
+            </p>
+            <p>
+              The stages are fixed. First tokenisation, showing exactly how the text was broken into subword pieces. Then the input embedding with its norm distribution. Then every transformer layer in sequence, each reporting its mean norm and the cosine similarity between its output and the previous layer&apos;s output — a measure of how much the representation has changed. Finally the output head, with the top predicted tokens, their probabilities, and the entropy of the full distribution.
+            </p>
+            <p>
+              Low cosine between adjacent layers means a layer has done substantial rewriting. High cosine means the layer mostly passed the representation through unchanged. Reading this sequence is the closest thing Vectorscope offers to watching the model work through a prompt.
+            </p>
+            <p>
+              Low output entropy means the model is confident; high entropy means it sees several viable continuations. Use this operation when you want the whole story of a single forward pass rather than a slice of it.
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -57,6 +58,23 @@ export default function WeightComparison() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Weight Comparison"
+        summary="Compares the input embedding matrix against the output projection head token by token. Reports cosine similarity per row, the distribution of norms on each side, and surfaces the tokens where input and output geometry diverge most sharply. Reveals whether the model treats its two vocabulary-facing matrices as mirror images or as different spaces."
+        details={
+          <>
+            <p>
+              A language model has two vocabulary-facing matrices: the input embedding (which turns a token id into a vector) and the output projection head (which turns a final hidden state back into logits over the vocabulary). When these two matrices are tied, they share weights and the comparison is trivial. When they are untied, each token has two geometries, and those geometries can drift apart during training.
+            </p>
+            <p>
+              This operation walks through a sample of the vocabulary, picks the corresponding row from each matrix, and computes the cosine similarity. A cosine of 1 means the token is treated identically on input and output. A low cosine means the model has developed a meaningful asymmetry — it expects the token to mean one thing when it arrives and another when it is produced.
+            </p>
+            <p>
+              The most-similar and most-different token lists are usually the most revealing output. Function words, punctuation, and high-frequency tokens tend to stay aligned. Rare, semantically rich tokens often drift. That pattern is a fingerprint of the training objective.
+            </p>
+          </>
+        }
+      />
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">
           <button onClick={run} disabled={loading} className="btn-editorial-primary">

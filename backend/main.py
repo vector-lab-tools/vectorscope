@@ -17,6 +17,7 @@ from operations.layer_probe import get_layer_probe
 from operations.full_trace import stream_full_trace
 from operations.attention import get_attention_at_layer, get_attention_head_across_layers
 from operations.manifold_formation import get_manifold_formation
+from operations.generation_vector import stream_generation_vector, MAX_GENERATION_TOKENS
 
 app = FastAPI(title="Vectorscope Backend", version="0.1.0")
 
@@ -70,6 +71,14 @@ class ManifoldFormationRequest(BaseModel):
 
 class TokenTrajectoryRequest(BaseModel):
     text: str
+
+
+class GenerationVectorRequest(BaseModel):
+    prompt: str
+    max_new_tokens: int = 80
+    temperature: float = 0.8
+    top_p: float = 0.9
+    top_k: int = 40
 
 
 @app.get("/status")
@@ -189,6 +198,30 @@ async def full_trace(req: FullTraceRequest):
     async def generate():
         # Run the heavy computation in a thread, collect results, then stream
         lines = await asyncio.to_thread(lambda: list(stream_full_trace(req.text, req.top_k)))
+        for line in lines:
+            yield line
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
+
+
+@app.get("/generation-vector/config")
+async def generation_vector_config():
+    return {"maxNewTokensCap": MAX_GENERATION_TOKENS}
+
+
+@app.post("/generation-vector")
+async def generation_vector(req: GenerationVectorRequest):
+    async def generate():
+        lines = await asyncio.to_thread(
+            lambda: list(
+                stream_generation_vector(
+                    prompt=req.prompt,
+                    max_new_tokens=req.max_new_tokens,
+                    temperature=req.temperature,
+                    top_p=req.top_p,
+                    top_k=req.top_k,
+                )
+            )
+        )
         for line in lines:
             yield line
     return StreamingResponse(generate(), media_type="application/x-ndjson")

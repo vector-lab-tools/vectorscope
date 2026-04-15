@@ -8,6 +8,7 @@ import { projectPCA3D } from "@/lib/geometry/pca";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -52,6 +53,26 @@ export default function TokenTrajectory() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Token Trajectory"
+        summary="Runs a piece of text through every layer of the model and records the hidden-state vector for each token at each depth. The first token's trajectory is projected to 3D via PCA so you can watch how a single word moves through the model's representational space as context accumulates."
+        details={
+          <>
+            <p>
+              A transformer does not transform a token once. It transforms it dozens of times, layer after layer, each layer rewriting the vector in light of its neighbours. Token Trajectory makes that journey visible. You give it a short text, and it runs a full forward pass while recording the hidden state of every token at every layer.
+            </p>
+            <p>
+              The 3D view shows the path of the first token through the layers. PCA is fitted across all the layers&apos; positions so the axes reflect the directions of greatest variation in the trajectory itself. A token that barely moves is one the model considers stable. A token that swings through the space is one whose meaning is being aggressively rewritten by context.
+            </p>
+            <p>
+              The per-layer norms show how much geometric energy the vector carries as it travels. Rising norms typically mean the model is accumulating information; falling norms mean it is compressing.
+            </p>
+            <p>
+              This operation is the simplest answer to the question: what does a word look like inside a language model? It looks like a path.
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">

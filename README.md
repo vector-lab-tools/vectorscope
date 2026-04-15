@@ -4,8 +4,8 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.2.3
-**Date:** 16 April 2026
+**Version:** 0.2.4
+**Date:** 15 April 2026
 **Licence:** MIT
 
 Vectorscope is a research instrument for examining the internal geometry of open-weight language models. It inspects embedding tables, traces token representations through transformer layers, visualises attention patterns, and analyses the material grain of learned geometry. Unlike commercial embedding APIs, which return sentence-level composite vectors from separately trained embedding models, Vectorscope works directly with open-weight models where the weights, activations, and token embeddings can be inspected at each layer.
@@ -52,6 +52,7 @@ Vectorscope is organised as a three-group tab navigation following the pipeline 
 | **Token Trajectory** | Trace a token through all layers. 3D trajectory path, layer-to-layer cosine similarity, norm profile | ✓ |
 | **Layer Probe** | Hidden states at a specific layer. Token similarity heatmap, norm bars, full similarity matrix | ✓ |
 | **Full Trace** | Complete tokens → embeddings → layers → predictions pipeline. NDJSON streaming with progress, per-token norm heatmap, top-K prediction chart, entropy | ✓ |
+| **Generation Vector** | Full autoregressive generation with instrumented forward passes. Six horizontal panels (tokenisation, input embedding, attention, layer progression, output distribution, decoded text), scrubber playback, click-to-focus across panels, global PCA 3D trajectory per token | ✓ |
 | **Manifold Formation** | Animated layer-by-layer PCA geometry with play/pause controls. Shows how the manifold forms through depth | ✓ |
 
 ### Critique (theoretical/analytical instruments)
@@ -137,6 +138,7 @@ backend/                          # Python FastAPI
     token_trajectory.py           # Token through all layers
     layer_probe.py                # Hidden states at layer N
     full_trace.py                 # End-to-end pipeline (NDJSON streaming)
+    generation_vector.py          # Instrumented autoregressive generation
     manifold_formation.py         # Layer-by-layer PCA geometry
 src/                              # Next.js frontend
   app/

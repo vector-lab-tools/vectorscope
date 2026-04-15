@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Play, Pause, SkipBack, SkipForward } from "luci
 import Plot3DWrapper from "@/components/Plot3DWrapper";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -86,6 +87,26 @@ export default function ManifoldFormation() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Manifold Formation"
+        summary="Runs a forward pass and projects every token at every layer into a shared 3D space via PCA. An animation control lets you scrub through the depths of the model and watch the cloud of tokens deform layer by layer, showing how local context pulls words into clusters and how the manifold takes shape."
+        details={
+          <>
+            <p>
+              Manifold Formation answers a different question from Token Trajectory. Instead of following a single token through the layers, it shows the entire sequence at once, layer by layer, and lets you scrub through the depths of the model like frames of an animation.
+            </p>
+            <p>
+              PCA is fitted once across all layers so the axes stay consistent as you scroll through. This means the animation shows real geometric motion, not the artefact of a moving coordinate frame. Tokens that start scattered often drift toward each other as context accumulates; tokens that started close may split apart when the model decides they mean different things in this sentence.
+            </p>
+            <p>
+              The per-layer mean cosine similarity is reported alongside the view: a quantitative summary of how collapsed or spread out the token cloud is at that depth. Watching this number rise is watching the manifold tighten.
+            </p>
+            <p>
+              This is the operation to use when you want to see the manifold as a shape rather than as a trajectory. It is the closest Vectorscope comes to visualising what people mean when they call a language model&apos;s internal space a &quot;geometry of meaning.&quot;
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">

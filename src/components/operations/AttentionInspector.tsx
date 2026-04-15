@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -74,6 +75,26 @@ export default function AttentionInspector() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Attention Inspector"
+        summary="Runs a forward pass and extracts the raw attention weights for every head at a chosen layer. Visualises each head's attention matrix as a heatmap and reports per-head statistics (entropy, diagonal mass, peak weight) so you can see which heads spread their attention widely and which lock onto single tokens."
+        details={
+          <>
+            <p>
+              Every transformer layer contains several attention heads working in parallel. Each head learns its own strategy for deciding which tokens in the context matter to which. Attention Inspector pulls those learned strategies out of the model and lets you look at them directly.
+            </p>
+            <p>
+              For a chosen layer, you get a heatmap per head. Rows are query tokens, columns are key tokens, the colour shows the weight the head assigned. A head that mostly follows the diagonal is paying attention to each token&apos;s own position. A head with vertical stripes is treating specific tokens as landmarks the whole sequence pays attention to. A head with diffuse colour is hedging.
+            </p>
+            <p>
+              The per-head statistics quantify these shapes. <strong>Entropy</strong> measures how spread out a head&apos;s attention is — low entropy means it locks onto one or two tokens, high entropy means it smears its attention across the sequence. <strong>Diagonal mean</strong> indicates how self-focused the head is. <strong>Max attention</strong> shows the peak weight it assigns to any single pairing.
+            </p>
+            <p>
+              Heads are not interpretable on their own, but they often cluster into recognisable types: positional heads, copying heads, induction heads, null heads that have learned to do very little. This operation is the first step in sorting them.
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4 flex-wrap">

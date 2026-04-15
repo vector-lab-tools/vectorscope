@@ -15,6 +15,7 @@ import ProjectionHead from "@/components/operations/ProjectionHead";
 import WeightComparison from "@/components/operations/WeightComparison";
 import LayerProbe from "@/components/operations/LayerProbe";
 import FullTrace from "@/components/operations/FullTrace";
+import GenerationVector from "@/components/operations/GenerationVector";
 import AttentionInspector from "@/components/operations/AttentionInspector";
 import ManifoldFormation from "@/components/operations/ManifoldFormation";
 import { Clippy } from "@/components/easter-eggs/Clippy";
@@ -53,10 +54,11 @@ function VectorscopeApp() {
             {activeTab === "token-trajectory" && <TokenTrajectory />}
             {activeTab === "layer-probe" && <LayerProbe />}
             {activeTab === "full-trace" && <FullTrace />}
+            {activeTab === "generation-vector" && <GenerationVector />}
             {activeTab === "attention" && <AttentionInspector />}
             {activeTab === "manifold-formation" && <ManifoldFormation />}
             {activeTab === "vocabulary-map" && <VocabularyMap />}
-            {!["embedding-table", "projection-head", "weight-comparison", "token-trajectory", "layer-probe", "full-trace", "attention", "manifold-formation", "vocabulary-map"].includes(activeTab) && (
+            {!["embedding-table", "projection-head", "weight-comparison", "token-trajectory", "layer-probe", "full-trace", "generation-vector", "attention", "manifold-formation", "vocabulary-map"].includes(activeTab) && (
               <div className="card-editorial p-4 text-center">
                 <p className="font-sans text-xs text-slate">
                   {activeTab} — coming in Phase 3

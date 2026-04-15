@@ -88,6 +88,7 @@ export const TAB_GROUPS: Record<TabGroup, { label: string; tabs: TabDef[] }> = {
       { id: "token-trajectory", label: "Token Trajectory", group: "trace" },
       { id: "layer-probe", label: "Layer Probe", group: "trace" },
       { id: "full-trace", label: "Full Trace", group: "trace" },
+      { id: "generation-vector", label: "Generation Vector", group: "trace" },
       { id: "manifold-formation", label: "Manifold Formation", group: "trace" },
     ],
   },

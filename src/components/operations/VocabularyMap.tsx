@@ -7,6 +7,7 @@ import type { EmbeddingTableResult } from "@/types/model";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -55,6 +56,23 @@ export default function VocabularyMap() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Vocabulary Map"
+        summary="Samples the input embedding matrix and projects tokens into a navigable 3D map of the vocabulary. A search field highlights tokens matching a query; colour encodes token length. A way to see where morphemes, punctuation, whitespace tokens, and rare words sit relative to one another in the model's raw geometry."
+        details={
+          <>
+            <p>
+              Vocabulary Map is Embedding Table turned into something you can walk around in. The same underlying matrix is loaded and projected to 3D, but here the focus is navigation rather than statistics. You can search for a substring and see every matching token highlighted in place. You can colour by token length to see whether long tokens and short tokens occupy different regions of the space.
+            </p>
+            <p>
+              Because modern tokenisers are byte-pair encoders, the vocabulary is not a list of words. It is a mix of whole words, word fragments, morphemes, punctuation sequences, whitespace-prefixed variants, and the occasional piece of accidental unicode. Each of these categories tends to cluster in its own part of the embedding space, and the map makes those clusters visible.
+            </p>
+            <p>
+              Use this operation when you want to develop intuition for how the tokeniser sees the world before you start asking theoretical questions about what the model does with that vocabulary. It is the geography of the model&apos;s raw ontology.
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4 flex-wrap">

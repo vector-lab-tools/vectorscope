@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -54,6 +55,26 @@ export default function ProjectionHead() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Projection Head"
+        summary="Extracts the output projection matrix (the layer that maps final hidden states back to vocabulary logits) and reports whether it is tied to the input embedding. Computes its norm statistics, effective rank, and isotropy, then projects sampled rows into 3D so you can compare the output geometry against the input embedding."
+        details={
+          <>
+            <p>
+              The projection head, sometimes called the unembedding or LM head, is the last matrix in a language model. After the transformer has finished its work, the final hidden state is multiplied by this matrix to produce a score for every token in the vocabulary. The highest scores become the next-token prediction.
+            </p>
+            <p>
+              In many models this matrix is <strong>tied</strong> to the input embedding — they share the same weights, so the space used for reading tokens is identical to the space used for writing them. In others it is separate, which means the model maintains two different geometries for the same vocabulary. This operation reports which regime the model is in.
+            </p>
+            <p>
+              The statistics mirror those of the input embedding: norm distribution, effective rank, isotropy. Comparing the two matrices reveals whether the model treats its read and write sides symmetrically, or whether something has happened during training to distort one relative to the other.
+            </p>
+            <p>
+              For weight-tied models this is largely a sanity check. For separately parameterised heads, it is the beginning of an investigation into why the model sees tokens differently at input than at output.
+            </p>
+          </>
+        }
+      />
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4">
           <button onClick={run} disabled={loading} className="btn-editorial-primary">

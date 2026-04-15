@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+import OperationIntro from "@/components/OperationIntro";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -55,6 +56,23 @@ export default function LayerProbe() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <OperationIntro
+        name="Layer Probe"
+        summary="Freezes a forward pass at a chosen layer and extracts the hidden-state vector for every token. Reports per-token norms and the pairwise cosine similarity matrix across the sequence. Lets you inspect how much each token has been pulled toward its neighbours at a specific depth in the model."
+        details={
+          <>
+            <p>
+              Layer Probe takes a forward pass and halts it conceptually at a single depth. You choose the layer, it returns the hidden state of every token at that exact point in the computation. Think of it as a geometric x-ray at a single slice of the model.
+            </p>
+            <p>
+              Two outputs matter. The first is the norm of each token: how much geometric weight it carries at this depth. The second is the pairwise cosine similarity matrix — a token-by-token grid showing how close each token&apos;s vector is to every other. Diagonal entries are always 1.0; off-diagonal entries reveal local geometric gravity. Two tokens with a high cosine at layer 6 have been pulled into alignment by the first six layers of attention.
+            </p>
+            <p>
+              Shallow layers tend to keep tokens distinct. Middle layers start to merge neighbours into shared subspaces. Later layers often show the manifold collapsing into fewer, thicker clusters. Layer Probe is the right tool when you want to ask: at what depth did these words start to look alike?
+            </p>
+          </>
+        }
+      />
       {/* Controls */}
       <div className="card-editorial p-4">
         <div className="flex items-center gap-4 flex-wrap">
