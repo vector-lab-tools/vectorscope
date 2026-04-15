@@ -132,7 +132,6 @@ export const TAB_GROUPS: Record<TabGroup, { label: string; tabs: TabDef[] }> = {
     tabs: [
       { id: "vocabulary-map", label: "Vocabulary Map", group: "critique" },
       { id: "isotropy", label: "Isotropy Analysis", group: "critique" },
-      { id: "cross-model", label: "Cross-Model Anatomy", group: "critique" },
       { id: "precision-degradation", label: "Precision Degradation", group: "critique" },
     ],
   },
