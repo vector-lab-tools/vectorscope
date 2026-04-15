@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { EmbeddingTableResult } from "@/types/model";
@@ -10,16 +10,128 @@ import Plot3DWrapper from "@/components/Plot3DWrapper";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
 import { EMBEDDING_TABLE_PRESETS } from "@/lib/presets/defaults";
+import { useModel } from "@/context/ModelContext";
+
+const STAT_EXPLANATIONS: Record<string, { title: string; body: ReactNode }> = {
+  Vocabulary: {
+    title: "Vocabulary size",
+    body: (
+      <>
+        <p>
+          The number of distinct tokens the model can address. Each one has a fixed entry in the
+          input embedding matrix, which is the lookup table the model consults when a token first
+          enters the forward pass.
+        </p>
+        <p>
+          For GPT-2 this is 50,257: bytes, whole words, word pieces, and a few special symbols.
+          The vocabulary is fixed at training time and is the boundary of what the model can
+          perceive at the input layer. Anything outside it has to be broken into pieces by the
+          tokeniser first.
+        </p>
+      </>
+    ),
+  },
+  Dimension: {
+    title: "Hidden dimension",
+    body: (
+      <>
+        <p>
+          The width of each embedding vector. Every token lives in a space of this many
+          dimensions, and every hidden state at every layer inherits the same width.
+        </p>
+        <p>
+          GPT-2 small is 768. Llama 3.2 1B is 2048. Mistral 7B is 4096. The dimension sets the
+          geometric budget: how many independent directions the model has to encode meaning,
+          syntax, context, register, and everything else it needs to carry through the stack.
+        </p>
+      </>
+    ),
+  },
+  "Mean Norm": {
+    title: "Mean embedding norm",
+    body: (
+      <>
+        <p>
+          The average Euclidean length of an input embedding vector across the sample. A rough
+          measure of how much geometric energy the model assigns to a typical token.
+        </p>
+        <p>
+          Low norms mean the embedding layer is squeezing tokens toward the origin; high norms
+          mean it is spreading them out. The interesting thing is almost never the mean itself
+          but the variance around it: rare tokens tend to have inflated norms, common function
+          words tend to cluster near the mean.
+        </p>
+      </>
+    ),
+  },
+  "Effective Rank": {
+    title: "Effective rank",
+    body: (
+      <>
+        <p>
+          The number of dimensions the embedding matrix actually uses, computed from the Shannon
+          entropy of its singular value spectrum. If the value is close to the full dimension,
+          every direction is doing work; if it is much smaller, the matrix has collapsed onto a
+          lower-dimensional subspace.
+        </p>
+        <p>
+          A rank of 400 in a 768-dimensional model means roughly half the available directions
+          are empty. The gap between effective rank and full dimension is one of the clearest
+          signatures of anisotropic geometry, and it is a standard diagnostic in the
+          representation-degeneration literature.
+        </p>
+      </>
+    ),
+  },
+  Isotropy: {
+    title: "Isotropy score",
+    body: (
+      <>
+        <p>
+          A measure of directional uniformity on the unit sphere. Value of 1.0 means the vectors
+          are spread evenly in every direction; value near 0 means they crowd into a narrow cone.
+        </p>
+        <p>
+          Mu et al. (2018) and Ethayarajh (2019) showed that transformer embeddings are
+          notoriously anisotropic: they occupy a thin slice of the space rather than filling it.
+          This has knock-on effects for cosine similarity (all vectors look more similar than
+          they should) and is part of why projection heads and normalisation layers exist.
+        </p>
+      </>
+    ),
+  },
+  "Weight Tied": {
+    title: "Weight tying",
+    body: (
+      <>
+        <p>
+          Whether the input embedding matrix and the output projection (the unembedding, also
+          called the language-model head) share the same weights. If tied, the same matrix is
+          used to look tokens up at the input and to score them at the output.
+        </p>
+        <p>
+          Weight tying halves the parameter count of the vocabulary layers and was popularised by
+          Press and Wolf (2017). GPT-2 ties; Llama models do not. When untied, the input and
+          output spaces can drift apart geometrically, which matters for any operation that
+          assumes they live in the same frame of reference.
+        </p>
+      </>
+    ),
+  },
+};
 
 const BACKEND_URL = "http://localhost:8000";
 
 export default function EmbeddingTable() {
+  const { backendStatus } = useModel();
+  const model = backendStatus.model;
   const [result, setResult] = useState<EmbeddingTableResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sampleSize, setSampleSize] = useState(3000);
   const [deepDiveOpen, setDeepDiveOpen] = useState(false);
   const [showTokens, setShowTokens] = useState(false);
+  const [explainedStat, setExplainedStat] = useState<string | null>(null);
 
   const run = useCallback(async () => {
     setLoading(true);
@@ -66,19 +178,22 @@ export default function EmbeddingTable() {
         }
       />
       {/* Controls */}
-      <div className="card-editorial p-4 space-y-2">
-        <div className="flex items-center gap-4">
-          <label className="font-sans text-[11px] text-slate">
-            Sample size
+      <div className="card-editorial p-4 space-y-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="embedding-sample-size" className="font-sans text-[11px] text-slate">
+              Sample size
+            </label>
             <input
+              id="embedding-sample-size"
               type="number"
               value={sampleSize}
               onChange={(e) => setSampleSize(Number(e.target.value))}
-              className="input-editorial ml-2 w-20"
+              className="input-editorial w-28"
               min={100}
               max={50000}
             />
-          </label>
+          </div>
           <button
             onClick={run}
             disabled={loading}
@@ -86,7 +201,7 @@ export default function EmbeddingTable() {
           >
             {loading ? "Extracting..." : "Extract Embedding Table"}
           </button>
-          {error && <span className="text-red-600 font-sans text-[11px]">{error}</span>}
+          {error && <span className="text-red-600 font-sans text-[11px] self-center">{error}</span>}
         </div>
         <PresetChipRow
           disabled={loading}
@@ -102,13 +217,68 @@ export default function EmbeddingTable() {
         <>
           {/* Stats cards */}
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
-            <StatCard label="Vocabulary" value={result.shape[0].toLocaleString()} unit="tokens" onClick={() => setShowTokens(!showTokens)} />
-            <StatCard label="Dimension" value={result.shape[1].toString()} unit="d" />
-            <StatCard label="Mean Norm" value={result.stats.meanNorm.toFixed(2)} />
-            <StatCard label="Effective Rank" value={result.stats.effectiveRank.toFixed(1)} unit={`/ ${result.shape[1]}`} />
-            <StatCard label="Isotropy" value={result.stats.isotropyScore.toFixed(3)} />
-            <StatCard label="Norm Range" value={`${result.stats.minNorm.toFixed(1)} \u2013 ${result.stats.maxNorm.toFixed(1)}`} />
+            <StatCard
+              label="Vocabulary"
+              value={result.shape[0].toLocaleString()}
+              unit="tokens"
+              secondaryAction={{ label: showTokens ? "hide tokens" : "view tokens", onClick: () => setShowTokens(!showTokens) }}
+              explained={explainedStat === "Vocabulary"}
+              onExplain={() => setExplainedStat(explainedStat === "Vocabulary" ? null : "Vocabulary")}
+            />
+            <StatCard
+              label="Dimension"
+              value={result.shape[1].toString()}
+              unit="d"
+              explained={explainedStat === "Dimension"}
+              onExplain={() => setExplainedStat(explainedStat === "Dimension" ? null : "Dimension")}
+            />
+            <StatCard
+              label="Mean Norm"
+              value={result.stats.meanNorm.toFixed(2)}
+              explained={explainedStat === "Mean Norm"}
+              onExplain={() => setExplainedStat(explainedStat === "Mean Norm" ? null : "Mean Norm")}
+            />
+            <StatCard
+              label="Effective Rank"
+              value={result.stats.effectiveRank.toFixed(1)}
+              unit={`/ ${result.shape[1]}`}
+              explained={explainedStat === "Effective Rank"}
+              onExplain={() => setExplainedStat(explainedStat === "Effective Rank" ? null : "Effective Rank")}
+            />
+            <StatCard
+              label="Isotropy"
+              value={result.stats.isotropyScore.toFixed(3)}
+              explained={explainedStat === "Isotropy"}
+              onExplain={() => setExplainedStat(explainedStat === "Isotropy" ? null : "Isotropy")}
+            />
+            <StatCard
+              label="Weight Tied"
+              value={model?.weightTied ? "Yes" : "No"}
+              explained={explainedStat === "Weight Tied"}
+              onExplain={() => setExplainedStat(explainedStat === "Weight Tied" ? null : "Weight Tied")}
+            />
           </div>
+
+          {/* Stat explanation panel */}
+          {explainedStat && STAT_EXPLANATIONS[explainedStat] && (
+            <div className="card-editorial p-4 border-burgundy/30">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h3 className="font-sans text-xs font-semibold text-burgundy uppercase tracking-wider">
+                  {STAT_EXPLANATIONS[explainedStat].title}
+                </h3>
+                <button
+                  onClick={() => setExplainedStat(null)}
+                  className="font-sans text-[11px] text-slate hover:text-ink"
+                  aria-label="Dismiss explanation"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="font-sans text-[12px] text-slate leading-relaxed space-y-2 prose-editorial">
+                {STAT_EXPLANATIONS[explainedStat].body}
+              </div>
+            </div>
+          )}
 
           {/* Token list (toggled from Vocabulary card) */}
           {showTokens && (
@@ -309,21 +479,49 @@ export default function EmbeddingTable() {
   );
 }
 
-function StatCard({ label, value, unit, onClick }: { label: string; value: string; unit?: string; onClick?: () => void }) {
+function StatCard({
+  label,
+  value,
+  unit,
+  explained,
+  onExplain,
+  secondaryAction,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  explained?: boolean;
+  onExplain?: () => void;
+  secondaryAction?: { label: string; onClick: () => void };
+}) {
   return (
     <div
-      className={`card-editorial p-2 text-center ${onClick ? "cursor-pointer hover:border-burgundy/40 hover:shadow-editorial-md group" : ""}`}
-      onClick={onClick}
+      className={`card-editorial p-2 text-center transition-colors ${
+        explained ? "border-burgundy/60 shadow-editorial-md" : ""
+      }`}
     >
-      <div className="font-sans text-[10px] text-slate uppercase tracking-wider">{label}</div>
+      <button
+        type="button"
+        onClick={onExplain}
+        title="Click for explanation"
+        className={`font-sans text-[10px] uppercase tracking-wider underline decoration-dotted underline-offset-2 decoration-slate/40 hover:decoration-burgundy hover:text-burgundy cursor-help transition-colors ${
+          explained ? "text-burgundy decoration-burgundy" : "text-slate"
+        }`}
+      >
+        {label}
+      </button>
       <div className="font-sans text-xs font-semibold mt-0.5">
         {value}
         {unit && <span className="font-sans text-[10px] text-slate font-normal ml-0.5">{unit}</span>}
       </div>
-      {onClick && (
-        <div className="font-sans text-[9px] text-burgundy/60 group-hover:text-burgundy mt-0.5">
-          click to view
-        </div>
+      {secondaryAction && (
+        <button
+          type="button"
+          onClick={secondaryAction.onClick}
+          className="font-sans text-[9px] text-burgundy/70 hover:text-burgundy mt-0.5 underline decoration-dotted underline-offset-2"
+        >
+          {secondaryAction.label}
+        </button>
       )}
     </div>
   );
