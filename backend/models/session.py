@@ -69,22 +69,52 @@ class ModelSession:
         if declared is not None:
             return str(declared).replace("torch.", "")
 
-        # 2) Safetensors header
+        # 2) Safetensors header. Works for both HF cache repo IDs and local
+        #    directory paths — local dirs are checked first because they
+        #    disambiguate quickly, then HF cache lookup handles the repo_id
+        #    case. try_to_load_from_cache may return either None or the
+        #    sentinel _CACHED_NO_EXIST, so we test for a real string path.
         try:
+            import os
             from huggingface_hub import try_to_load_from_cache
             from safetensors import safe_open
 
-            path = try_to_load_from_cache(model_id, "model.safetensors")
-            if path is None:
-                idx = try_to_load_from_cache(model_id, "model.safetensors.index.json")
-                if idx:
+            path = None
+
+            # Local directory first
+            if os.path.isdir(model_id):
+                local_single = os.path.join(model_id, "model.safetensors")
+                local_idx = os.path.join(model_id, "model.safetensors.index.json")
+                if os.path.isfile(local_single):
+                    path = local_single
+                elif os.path.isfile(local_idx):
                     import json
-                    with open(idx) as f:
+                    with open(local_idx) as f:
                         shards = json.load(f).get("weight_map", {})
                     first_shard = next(iter(set(shards.values())), None)
                     if first_shard:
-                        path = try_to_load_from_cache(model_id, first_shard)
-            if path:
+                        candidate = os.path.join(model_id, first_shard)
+                        if os.path.isfile(candidate):
+                            path = candidate
+
+            # HF cache fallback (for repo_ids)
+            if not isinstance(path, str):
+                hit = try_to_load_from_cache(model_id, "model.safetensors")
+                if isinstance(hit, str):
+                    path = hit
+                else:
+                    idx = try_to_load_from_cache(model_id, "model.safetensors.index.json")
+                    if isinstance(idx, str):
+                        import json
+                        with open(idx) as f:
+                            shards = json.load(f).get("weight_map", {})
+                        first_shard = next(iter(set(shards.values())), None)
+                        if first_shard:
+                            hit2 = try_to_load_from_cache(model_id, first_shard)
+                            if isinstance(hit2, str):
+                                path = hit2
+
+            if isinstance(path, str):
                 with safe_open(path, framework="pt") as f:
                     for key in f.keys():
                         dtype_str = f.get_slice(key).get_dtype()

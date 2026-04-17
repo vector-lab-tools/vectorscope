@@ -24,9 +24,30 @@ export default function AboutDialog() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="font-display text-display-md">{APP_NAME}</h2>
-                <p className="font-sans text-caption text-slate mt-0.5">{APP_TAGLINE}</p>
+              <div className="flex items-start gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icons/vector-lab.svg"
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="mt-1 shrink-0"
+                />
+                <div>
+                  <h2 className="font-display text-display-md">{APP_NAME}</h2>
+                  <p className="font-sans text-caption text-slate mt-0.5">{APP_TAGLINE}</p>
+                  <p className="font-sans text-caption text-slate/70 mt-1">
+                    Part of the{" "}
+                    <a
+                      href="https://vector-lab-tools.github.io"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-burgundy hover:underline"
+                    >
+                      Vector Lab
+                    </a>
+                  </p>
+                </div>
               </div>
               <button onClick={() => setOpen(false)} className="text-slate hover:text-burgundy">
                 <X className="w-5 h-5" />
@@ -56,10 +77,23 @@ export default function AboutDialog() {
 
             <div className="font-sans text-caption text-slate space-y-2">
               <p>
-                Part of the <strong>Vector Lab</strong>, a family of research instruments for the critical study of AI vector media.
+                The{" "}
+                <a
+                  href="https://vector-lab-tools.github.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-burgundy hover:underline"
+                >
+                  Vector Lab
+                </a>{" "}
+                is a family of research instruments for vector methods on vector theory.
               </p>
               <p className="text-xs">
-                Companion tools: Manifold Atlas (comparative embedding geometry), LLMbench (comparative close reading of LLM outputs).
+                Sibling instruments:{" "}
+                <a href="https://github.com/vector-lab-tools/manifoldscope" target="_blank" rel="noopener noreferrer" className="hover:underline">Manifoldscope</a>,{" "}
+                <a href="https://github.com/vector-lab-tools/theoryscope" target="_blank" rel="noopener noreferrer" className="hover:underline">Theoryscope</a>,{" "}
+                <a href="https://github.com/vector-lab-tools/manifold-atlas" target="_blank" rel="noopener noreferrer" className="hover:underline">Manifold Atlas</a>,{" "}
+                <a href="https://github.com/vector-lab-tools/LLMbench" target="_blank" rel="noopener noreferrer" className="hover:underline">LLMbench</a>.
               </p>
             </div>
 
@@ -67,12 +101,12 @@ export default function AboutDialog() {
 
             <div className="font-sans text-caption text-slate">
               <a
-                href="https://github.com/dmberry/vectorscope"
+                href="https://github.com/vector-lab-tools/vectorscope"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-burgundy hover:underline"
               >
-                github.com/dmberry/vectorscope
+                github.com/vector-lab-tools/vectorscope
               </a>
             </div>
           </div>

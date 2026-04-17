@@ -19,6 +19,23 @@ export default function Header({ onOpenModelPicker }: HeaderProps) {
     <header className="border-b border-parchment-dark bg-card px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
+          {/* Canonical Vector Lab tool icon, links to the family landing page */}
+          <a
+            href="https://vector-lab-tools.github.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 hover:opacity-80 transition-opacity"
+            title="Part of the Vector Lab — click to visit the family landing page"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/vector-lab.svg"
+              alt="Vectorscope — part of the Vector Lab"
+              width={32}
+              height={32}
+              className="block"
+            />
+          </a>
           <div>
             <h1 className="font-display text-display-md text-ink tracking-tight">
               {APP_NAME}

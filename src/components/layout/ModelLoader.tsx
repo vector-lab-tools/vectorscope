@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useModel } from "@/context/ModelContext";
-import { Check, Download, HardDrive, Loader2, Trash2, X } from "lucide-react";
-import type { CacheInfo, CachedRepo } from "@/types/model";
+import { Check, Download, FolderOpen, HardDrive, Loader2, Search, Trash2, X } from "lucide-react";
+import type { CacheInfo, CachedRepo, LocalModelInspection } from "@/types/model";
 
 // Preset model catalogue. `size` is the on-disk weights footprint after
 // download. `minRam` is the minimum system RAM recommended to run the model in
@@ -206,6 +206,16 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
   const [presetSource, setPresetSource] = useState<"markdown" | "fallback">("fallback");
   const [presetError, setPresetError] = useState<string | null>(null);
 
+  // Local-directory flow: user pastes an absolute path, we inspect it, then
+  // load the same path through the existing /load endpoint (HuggingFace
+  // Transformers already handles local paths — the inspect step is a pre-
+  // flight validator that reads config.json and surfaces what's about to
+  // load, so a 10-minute weight load doesn't fail on an obvious typo).
+  const [localPath, setLocalPath] = useState("");
+  const [localInspection, setLocalInspection] = useState<LocalModelInspection | null>(null);
+  const [localInspecting, setLocalInspecting] = useState(false);
+  const [localPanelOpen, setLocalPanelOpen] = useState(false);
+
   // Fetch the preset catalogue whenever the backend (re)connects.
   useEffect(() => {
     if (backendStatus.status !== "connected") return;
@@ -326,6 +336,31 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete model");
     }
+  };
+
+  const handleInspectLocal = async () => {
+    const path = localPath.trim();
+    if (!path) return;
+    setLocalInspecting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/local-model/inspect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+      });
+      const data: LocalModelInspection = await res.json();
+      setLocalInspection(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Inspect failed");
+    } finally {
+      setLocalInspecting(false);
+    }
+  };
+
+  const handleLoadLocal = async () => {
+    if (!localInspection?.ok) return;
+    await handleLoad(localInspection.path);
   };
 
   const handleLoad = async (modelId: string) => {
@@ -731,28 +766,223 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
         </button>
       </div>
 
-      {/* Roadmap note — locally-trained models */}
+      {/* Locally-trained or fine-tuned models */}
       <div className="mt-5 pt-4 border-t border-parchment/60">
-        <p className="font-sans text-caption text-slate/70">
-          <span className="font-sans text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-burgundy/10 text-burgundy mr-1.5">
-            Coming soon
+        <button
+          onClick={() => setLocalPanelOpen(o => !o)}
+          className="flex items-center gap-2 font-sans text-caption text-slate hover:text-burgundy transition-colors"
+          aria-expanded={localPanelOpen}
+        >
+          <FolderOpen className="w-3.5 h-3.5" />
+          <span>Load a locally-trained or fine-tuned model</span>
+          <span className="text-slate/50 text-[10px]">
+            {localPanelOpen ? "▾" : "▸"}
           </span>
-          Dedicated UI for loading <strong>locally-trained or fine-tuned models</strong> — pick a
-          directory on disk that contains a <code className="text-[10px] bg-cream px-1 rounded-sm">config.json</code>{" "}
-          and <code className="text-[10px] bg-cream px-1 rounded-sm">.safetensors</code> weights, no HuggingFace
-          round-trip required. This will make Vectorscope usable for inspecting your own checkpoints,
-          LoRA adapters, and institutional fine-tunes. Basic support exists today via the custom
-          input above (paste an absolute path), but a proper picker and validation are on the Phase 4
-          roadmap.
-        </p>
-        <p className="font-sans text-caption text-slate/70 mt-2">
+        </button>
+
+        {localPanelOpen && (
+          <div className="mt-3 space-y-3 border border-parchment rounded-sm p-3 bg-cream/30">
+            <p className="font-sans text-caption text-slate/70">
+              Point at a directory on disk containing a{" "}
+              <code className="text-[10px] bg-cream px-1 rounded-sm">config.json</code> and model
+              weights (safetensors or pytorch_model.bin, single or sharded). Your own checkpoints,
+              institutional fine-tunes, or HuggingFace cache snapshots all work. Adapter-only
+              directories (LoRA) are detected and rejected — merge the adapter into the base model
+              first.
+            </p>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="/absolute/path/to/my-model"
+                value={localPath}
+                onChange={e => {
+                  setLocalPath(e.target.value);
+                  // Invalidate the previous inspection if the path changed.
+                  if (localInspection && e.target.value.trim() !== localInspection.path) {
+                    setLocalInspection(null);
+                  }
+                }}
+                className="input-editorial flex-1 font-mono text-[11px]"
+              />
+              <button
+                onClick={handleInspectLocal}
+                disabled={!localPath.trim() || localInspecting}
+                className="btn-editorial-ghost disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Validate the directory and show what's about to load"
+              >
+                {localInspecting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Search className="w-3.5 h-3.5" />
+                    Inspect
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {localInspection && <LocalInspectionPanel inspection={localInspection} />}
+
+            {localInspection?.ok && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleLoadLocal}
+                  disabled={loading || !!downloadingId}
+                  className="btn-editorial-primary text-body-sm"
+                >
+                  {loadingId === localInspection.path ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Loading…
+                    </span>
+                  ) : (
+                    `Load ${localInspection.modelName}`
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setLocalInspection(null);
+                    setLocalPath("");
+                  }}
+                  disabled={loading}
+                  className="btn-editorial-ghost text-body-sm"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <p className="font-sans text-caption text-slate/70 mt-3">
           <span className="font-sans text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-slate/10 text-slate mr-1.5">
             Also planned
           </span>
-          Alternative model sources (ModelScope, institutional mirrors via <code className="text-[10px] bg-cream px-1 rounded-sm">HF_ENDPOINT</code>),
-          and an editable preset list so you can curate your own default models without rebuilding.
+          Alternative model sources (ModelScope, institutional mirrors via{" "}
+          <code className="text-[10px] bg-cream px-1 rounded-sm">HF_ENDPOINT</code>).
         </p>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LocalInspectionPanel — spec card + warnings/errors for a /local-model/inspect
+// result. Split out so the main ModelLoader component stays readable.
+// ---------------------------------------------------------------------------
+
+function LocalInspectionPanel({ inspection }: { inspection: LocalModelInspection }) {
+  const c = inspection.config;
+  const sizeGb = inspection.sizeBytes / 1e9;
+
+  return (
+    <div
+      className={
+        "rounded-sm border p-3 " +
+        (inspection.ok
+          ? "border-green-700/30 bg-green-50/40"
+          : "border-red-400/40 bg-red-50/40")
+      }
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="font-sans text-body-sm font-semibold text-ink">
+            {inspection.modelName || "model"}
+          </div>
+          <div className="font-mono text-[10px] text-slate break-all">{inspection.path}</div>
+        </div>
+        <span
+          className={
+            "font-mono text-[10px] px-1.5 py-0.5 rounded-sm " +
+            (inspection.ok
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-700")
+          }
+        >
+          {inspection.ok ? "loadable" : "not loadable"}
+        </span>
+      </div>
+
+      {inspection.errors.length > 0 && (
+        <ul className="list-disc pl-5 mb-2 space-y-0.5 font-sans text-[11px] text-red-700">
+          {inspection.errors.map((err, i) => (
+            <li key={i}>{err}</li>
+          ))}
+        </ul>
+      )}
+
+      {inspection.warnings.length > 0 && (
+        <ul className="list-disc pl-5 mb-2 space-y-0.5 font-sans text-[11px] text-amber-700">
+          {inspection.warnings.map((warn, i) => (
+            <li key={i}>{warn}</li>
+          ))}
+        </ul>
+      )}
+
+      {c && (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-sans text-[11px] text-slate">
+          <div className="flex justify-between">
+            <span>Architecture</span>
+            <span className="text-ink font-mono text-[10px]">
+              {c.modelType ?? "–"}
+              {c.architectures.length > 0 ? ` (${c.architectures[0]})` : ""}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Native dtype</span>
+            <span className="text-ink font-mono text-[10px]">
+              {inspection.nativeDtype ?? c.torchDtype ?? "unknown"}
+            </span>
+          </div>
+          {c.hiddenSize !== null && (
+            <div className="flex justify-between">
+              <span>Hidden size</span>
+              <span className="text-ink">{c.hiddenSize.toLocaleString()}</span>
+            </div>
+          )}
+          {c.numLayers !== null && (
+            <div className="flex justify-between">
+              <span>Layers</span>
+              <span className="text-ink">{c.numLayers}</span>
+            </div>
+          )}
+          {c.numHeads !== null && (
+            <div className="flex justify-between">
+              <span>Attention heads</span>
+              <span className="text-ink">{c.numHeads}</span>
+            </div>
+          )}
+          {c.vocabSize !== null && (
+            <div className="flex justify-between">
+              <span>Vocabulary</span>
+              <span className="text-ink">{c.vocabSize.toLocaleString()}</span>
+            </div>
+          )}
+          {c.contextLength !== null && (
+            <div className="flex justify-between">
+              <span>Context length</span>
+              <span className="text-ink">{c.contextLength.toLocaleString()}</span>
+            </div>
+          )}
+          {inspection.sizeBytes > 0 && (
+            <div className="flex justify-between">
+              <span>On disk</span>
+              <span className="text-ink">
+                {sizeGb >= 1 ? `${sizeGb.toFixed(2)} GB` : `${(inspection.sizeBytes / 1e6).toFixed(1)} MB`}
+              </span>
+            </div>
+          )}
+          {inspection.weights.length > 0 && (
+            <div className="flex justify-between col-span-2">
+              <span>Weight files</span>
+              <span className="text-ink font-mono text-[10px]">
+                {inspection.weights.join(", ")}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

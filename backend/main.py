@@ -26,6 +26,7 @@ from operations.precision_degradation import (
     get_precision_degradation,
     SUPPORTED_PRECISIONS,
 )
+from operations.local_model import inspect_local_model
 from config.presets import load_presets
 
 app = FastAPI(title="Vectorscope Backend", version="0.1.0")
@@ -106,6 +107,10 @@ class PrecisionDegradationRequest(BaseModel):
     text: str
     precisions: Optional[List[str]] = None
     top_k: int = 10
+
+
+class LocalModelInspectRequest(BaseModel):
+    path: str
 
 
 @app.get("/status")
@@ -307,6 +312,12 @@ async def precision_degradation(req: PrecisionDegradationRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/local-model/inspect")
+async def local_model_inspect(req: LocalModelInspectRequest):
+    """Validate a local directory as a loadable HuggingFace model checkpoint."""
+    return await asyncio.to_thread(inspect_local_model, req.path)
 
 
 @app.get("/presets")

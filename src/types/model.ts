@@ -100,6 +100,30 @@ export interface IsotropyResult {
   };
 }
 
+export interface LocalModelConfig {
+  modelType: string | null;
+  architectures: string[];
+  hiddenSize: number | null;
+  numLayers: number | null;
+  numHeads: number | null;
+  vocabSize: number | null;
+  contextLength: number | null;
+  torchDtype: string | null;
+  tieWordEmbeddings: boolean | null;
+}
+
+export interface LocalModelInspection {
+  ok: boolean;
+  path: string;
+  errors: string[];
+  warnings: string[];
+  config: LocalModelConfig | null;
+  weights: string[];
+  sizeBytes: number;
+  nativeDtype: string | null;
+  modelName: string;
+}
+
 export interface PrecisionLayerMetrics {
   layer: number;
   mse: number;

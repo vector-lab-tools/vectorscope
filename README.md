@@ -1,9 +1,15 @@
-> Part of the [Vector Lab](https://github.com/vector-lab-tools) — research instruments for critical vector theory.
-> [Website and map](https://vector-lab-tools.github.io) · [Org profile](https://github.com/vector-lab-tools)
+> Part of the [Vector Lab](https://github.com/vector-lab-tools) —
+> vector methods for vector theory.
+> [Overview and map](https://vector-lab-tools.github.io) ·
+> [Org profile](https://github.com/vector-lab-tools)
 >
-> **Tier:** single-object scope. **Object:** a single open-weight model.
+> **Tier:** single-model scope. **Object:** a single open-weight model.
 >
-> **Sibling instruments:** [Manifoldscope](https://github.com/vector-lab-tools/manifoldscope) · [Theoryscope](https://github.com/vector-lab-tools/theoryscope) · [Manifold Atlas](https://github.com/vector-lab-tools/manifold-atlas) · [LLMbench](https://github.com/vector-lab-tools/LLMbench)
+> **Sibling instruments:**
+> [Manifoldscope](https://github.com/vector-lab-tools/manifoldscope) ·
+> [Theoryscope](https://github.com/vector-lab-tools/theoryscope) ·
+> [Manifold Atlas](https://github.com/vector-lab-tools/manifold-atlas) ·
+> [LLMbench](https://github.com/vector-lab-tools/LLMbench)
 
 # Vectorscope
 
@@ -11,7 +17,7 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.3.0
+**Version:** 0.3.1
 **Date:** 17 April 2026
 **Licence:** MIT
 
