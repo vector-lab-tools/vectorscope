@@ -23,7 +23,30 @@ export default function HelpDialog() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-display text-display-md">Help</h2>
+              <div className="flex items-start gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icons/vector-lab.svg"
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="mt-1 shrink-0"
+                />
+                <div>
+                  <h2 className="font-display text-display-md">Help</h2>
+                  <p className="font-sans text-caption text-slate/70 mt-0.5">
+                    Part of the{" "}
+                    <a
+                      href="https://vector-lab-tools.github.io"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-burgundy hover:underline"
+                    >
+                      Vector Lab
+                    </a>
+                  </p>
+                </div>
+              </div>
               <button onClick={() => setOpen(false)} className="text-slate hover:text-burgundy">
                 <X className="w-5 h-5" />
               </button>
