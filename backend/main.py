@@ -20,6 +20,7 @@ from operations.manifold_formation import get_manifold_formation
 from operations.generation_vector import stream_generation_vector, MAX_GENERATION_TOKENS
 from operations.isotropy import get_isotropy_analysis
 from operations.cache_info import get_cache_info, delete_cached_repo, download_repo
+from config.presets import load_presets
 
 app = FastAPI(title="Vectorscope Backend", version="0.1.0")
 
@@ -277,6 +278,18 @@ async def cache_download(req: CacheDownloadRequest):
         return await asyncio.to_thread(download_repo, req.repo_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/presets")
+async def presets():
+    """
+    Return the user-editable preset model catalogue from backend/config/models.md.
+
+    Shape: { presets: list, source: "markdown"|"fallback", path: str, error: str|None }.
+    The frontend uses the `presets` list as-is and surfaces `error` so the user
+    can see parse failures after hand-editing the file.
+    """
+    return await asyncio.to_thread(load_presets)
 
 
 if __name__ == "__main__":

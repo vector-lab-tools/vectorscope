@@ -11,8 +11,12 @@ import type { CacheInfo, CachedRepo } from "@/types/model";
 // numbers; GPUs with sufficient VRAM may allow lower). The remaining fields
 // are the canonical architecture specs published by the model's authors —
 // shown in the selected-model detail panel so users can compare models
-// without loading them. These will soon move to a user-editable markdown file
-// so new releases can be added without rebuilding the frontend.
+// without loading them.
+//
+// The live list is served by the backend from `backend/config/models.md`, a
+// user-editable markdown file. `FALLBACK_PRESETS` below is only used if the
+// backend is unreachable or the markdown parse fails — the frontend never
+// ends up empty.
 interface PresetModel {
   id: string;
   name: string;
@@ -31,7 +35,31 @@ interface PresetModel {
   description: string;
 }
 
-const PRESET_MODELS: PresetModel[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parsePreset(raw: any): PresetModel | null {
+  if (!raw || typeof raw !== "object") return null;
+  // Accept either snake_case (from the markdown) or camelCase (future-proofing).
+  const pick = (snake: string, camel: string) => raw[snake] ?? raw[camel];
+  return {
+    id: String(raw.id ?? ""),
+    name: String(raw.name ?? raw.id ?? "Unnamed model"),
+    size: String(raw.size ?? ""),
+    minRam: String(pick("min_ram", "minRam") ?? ""),
+    architecture: String(raw.architecture ?? ""),
+    params: String(raw.params ?? ""),
+    nativeDtype: String(pick("native_dtype", "nativeDtype") ?? "unknown"),
+    hiddenSize: Number(pick("hidden_size", "hiddenSize") ?? 0),
+    numLayers: Number(pick("num_layers", "numLayers") ?? 0),
+    numHeads: Number(pick("num_heads", "numHeads") ?? 0),
+    vocabSize: Number(pick("vocab_size", "vocabSize") ?? 0),
+    contextLength: Number(pick("context_length", "contextLength") ?? 0),
+    organisation: String(raw.organisation ?? ""),
+    releaseYear: Number(pick("release_year", "releaseYear") ?? 0),
+    description: String(raw.description ?? ""),
+  };
+}
+
+const FALLBACK_PRESETS: PresetModel[] = [
   {
     id: "openai-community/gpt2",
     name: "GPT-2 (124M)",
@@ -171,6 +199,40 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
   // detail panel; loading only happens when the user clicks the explicit
   // Load button. Prevents accidental multi-GB downloads from stray clicks.
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Presets are served by the backend from backend/config/models.md. We
+  // start from the hardcoded fallback so the UI isn't empty during the
+  // first fetch, then overwrite once /presets responds.
+  const [presets, setPresets] = useState<PresetModel[]>(FALLBACK_PRESETS);
+  const [presetSource, setPresetSource] = useState<"markdown" | "fallback">("fallback");
+  const [presetError, setPresetError] = useState<string | null>(null);
+
+  // Fetch the preset catalogue whenever the backend (re)connects.
+  useEffect(() => {
+    if (backendStatus.status !== "connected") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/presets`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const parsed = (data.presets || [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((p: any) => parsePreset(p))
+          .filter((p: PresetModel | null): p is PresetModel => p !== null && !!p.id);
+        if (parsed.length > 0) {
+          setPresets(parsed);
+          setPresetSource(data.source === "markdown" ? "markdown" : "fallback");
+          setPresetError(typeof data.error === "string" ? data.error : null);
+        }
+      } catch {
+        // Backend unreachable — keep FALLBACK_PRESETS, don't surface noise.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [backendStatus.status]);
 
   // Pull the cache on mount and whenever the backend reconnects, so the "Cached"
   // badges refresh after a download completes.
@@ -207,7 +269,7 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
 
   const handleDownload = async (modelId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const preset = PRESET_MODELS.find(p => p.id === modelId);
+    const preset = presets.find(p => p.id === modelId);
     const sizeStr = preset ? ` (${preset.size})` : "";
     const ok = window.confirm(
       `Download ${modelId}${sizeStr} from HuggingFace Hub into ~/.cache/huggingface/hub/?\n\n` +
@@ -271,7 +333,7 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
     // Preset downloads are already explicit in the selected-model card,
     // so we skip the extra modal there.
     const isCached = cachedSet.has(modelId);
-    const isPreset = PRESET_MODELS.some(p => p.id === modelId);
+    const isPreset = presets.some(p => p.id === modelId);
     if (!isCached && !isPreset) {
       const ok = window.confirm(
         `${modelId} is not in your local cache.\n\n` +
@@ -368,6 +430,14 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
         </div>
       )}
 
+      {presetError && (
+        <div className="bg-warning-50 border border-warning-500/30 text-warning-700 px-4 py-2 rounded-sm mb-4 font-sans text-caption">
+          <strong>Preset list fell back to built-in defaults.</strong>{" "}
+          <code className="text-[11px] bg-cream px-1 rounded-sm">backend/config/models.md</code>{" "}
+          did not parse: {presetError}. Fix the file and reopen this panel.
+        </div>
+      )}
+
       {/* Column headers — make the abbreviations legible at a glance */}
       <div className="flex items-center justify-between px-4 pb-1.5 font-sans text-[10px] uppercase tracking-wider text-slate/60">
         <span>Model</span>
@@ -384,7 +454,7 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
       </div>
 
       <div className="space-y-2 mb-4">
-        {PRESET_MODELS.map(model => {
+        {presets.map(model => {
           const isCached = cachedSet.has(model.id);
           const isThisLoading = loadingId === model.id;
           const isThisDownloading = downloadingId === model.id;
@@ -507,7 +577,7 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
 
       {/* Selected-model detail panel — tech specs + explicit Load button */}
       {selectedId && (() => {
-        const m = PRESET_MODELS.find(p => p.id === selectedId);
+        const m = presets.find(p => p.id === selectedId);
         if (!m) return null;
         const isCached = cachedSet.has(m.id);
         const isThisLoading = loadingId === m.id;
@@ -620,6 +690,23 @@ export default function ModelLoader({ onLoaded, onClose }: ModelLoaderProps = {}
         load them and cached to disk. Depending on connection speed and model size, first load can
         take anywhere from a few seconds to several minutes. After that the model lives in your
         cache and loads instantly.
+      </p>
+
+      <p className="font-sans text-caption text-slate/60 mb-3">
+        {presetSource === "markdown" ? (
+          <>
+            Preset list loaded from{" "}
+            <code className="text-[10px] bg-cream px-1 rounded-sm">backend/config/models.md</code>
+            . Edit that file and restart the backend to add or remove presets.
+          </>
+        ) : (
+          <>
+            Using built-in preset list (backend catalogue unavailable). When the backend is
+            running, presets come from{" "}
+            <code className="text-[10px] bg-cream px-1 rounded-sm">backend/config/models.md</code>
+            .
+          </>
+        )}
       </p>
 
       <div className="flex gap-2">
