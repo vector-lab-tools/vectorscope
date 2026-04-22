@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import OperationIntro from "@/components/OperationIntro";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -30,6 +32,8 @@ interface WeightComparisonResult {
 }
 
 export default function WeightComparison() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<WeightComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +61,7 @@ export default function WeightComparison() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Weight Comparison"
         summary="Compares the input embedding matrix against the output projection head token by token. Reports cosine similarity per row, the distribution of norms on each side, and surfaces the tokens where input and output geometry diverge most sharply. Reveals whether the model treats its two vocabulary-facing matrices as mirror images or as different spaces."
@@ -83,6 +87,24 @@ export default function WeightComparison() {
           {error && <span className="text-red-600 font-sans text-[11px]">{error}</span>}
         </div>
       </div>
+
+      {result && (
+        <div className="flex justify-end">
+          <ExportMenu
+            operationName="Weight Comparison"
+            modelName={backendStatus.model?.name}
+            getBundle={() => ({
+              json: result,
+              plotContainer: containerRef.current,
+              pdfTitle: "Weight Comparison",
+              pdfMetadata: [
+                { label: "Shape", value: `${result.shape[0]} × ${result.shape[1]}` },
+                { label: "Weight tied", value: result.weightTied ? "yes" : "no" },
+              ],
+            })}
+          />
+        </div>
+      )}
 
       {result && result.weightTied && (
         <div className="card-editorial p-4">

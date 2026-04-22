@@ -8,6 +8,7 @@ import { useModel } from "@/context/ModelContext";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
 import { FULL_TRACE_PRESETS } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
@@ -73,6 +74,7 @@ interface TraceState {
 
 export default function FullTrace() {
   const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("The cat sat on the mat");
   const [trace, setTrace] = useState<TraceState | null>(null);
   const [running, setRunning] = useState(false);
@@ -162,7 +164,7 @@ export default function FullTrace() {
   const progressPct = totalStages > 0 ? Math.min((stagesReceived / totalStages) * 100, 100) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Full Trace"
         summary="Streams a complete forward pass stage by stage over NDJSON: tokenisation, input embedding, every transformer layer, and the final output distribution. Reports per-layer norm statistics, cosine similarity between successive layers, and the top predictions with their entropy. A live geometric chronicle of one prompt moving through the entire model."
@@ -226,6 +228,28 @@ export default function FullTrace() {
           />
         </div>
       </div>
+
+      {trace?.complete && (
+        <div className="flex justify-end">
+          <ExportMenu
+            operationName="Full Trace"
+            modelName={backendStatus.model?.name}
+            getBundle={() => ({
+              json: trace,
+              plotContainer: containerRef.current,
+              pdfTitle: "Full Trace",
+              pdfSubtitle: `Input: ${trace.complete?.inputText ?? text}`,
+              pdfMetadata: [
+                { label: "Layers", value: String(trace.complete?.numLayers ?? "—") },
+                {
+                  label: "Top-1",
+                  value: trace.output?.topPredictions?.[0]?.token ?? "—",
+                },
+              ],
+            })}
+          />
+        </div>
+      )}
 
       {trace?.tokenize && (
         <>

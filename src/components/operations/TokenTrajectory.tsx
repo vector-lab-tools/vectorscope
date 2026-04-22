@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { TokenTrajectoryResult } from "@/types/model";
@@ -10,11 +10,15 @@ const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 import { TOKEN_TRAJECTORY_PRESETS } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
 
 export default function TokenTrajectory() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("justice");
   const [result, setResult] = useState<TokenTrajectoryResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +58,7 @@ export default function TokenTrajectory() {
   }, [result]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Token Trajectory"
         summary="Runs a piece of text through every layer of the model and records the hidden-state vector for each token at each depth. The first token's trajectory is projected to 3D via PCA so you can watch how a single word moves through the model's representational space as context accumulates."
@@ -110,6 +114,22 @@ export default function TokenTrajectory() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Token Trajectory"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Token Trajectory",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Tokens", value: String(result.tokens.length) },
+                  { label: "Layers", value: String(result.layers.length) },
+                ],
+              })}
+            />
+          </div>
           {/* Token info */}
           <div className="card-editorial p-3">
             <div className="flex items-center gap-2 flex-wrap font-sans text-[11px]">

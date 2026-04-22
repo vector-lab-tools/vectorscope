@@ -17,7 +17,7 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.3.2
+**Version:** 0.4.0
 **Date:** 23 April 2026
 **Licence:** MIT
 
@@ -109,6 +109,7 @@ Operations in the Critique group are interpretive rather than descriptive. They 
 - **Deep Dive.** Every operation has a collapsible Deep Dive panel with the full quantitative data: per-layer statistics tables, histogram bins, PCA coordinates, sampling logs.
 - **Preset chips.** Theoretically-motivated example prompts across operations — contested concepts, subject-verb agreement traps, bias probes, Berry's own formulations ("Capital is disciplining bits into vectors"), sampling-config bundles for Generation Vector.
 - **Editorial design system.** Ivory backgrounds, serif headings, burgundy accents, compact monospaced data tables. Shared with Manifold Atlas and LLMbench.
+- **Export.** Every operation has an Export menu with four formats: **JSON** (raw result, ideal for reproducibility), **CSV** (tabular extract for spreadsheet analysis, where the operation has one), **PNG** (high-resolution plot capture), and **PDF** (composed document with title, metadata, plots, and summary tables for papers or reports).
 - **Easter eggs.** A handful of hidden characters reward close reading of the interface.
 
 ## Design Rationale
@@ -238,6 +239,7 @@ The architecture follows the same pattern as LLMbench and Manifold Atlas: a thin
 | Numerics (server) | scikit-learn (PCA on large tensors), numpy |
 | Streaming | NDJSON over FastAPI `StreamingResponse` |
 | Persistence | HuggingFace Hub cache on disk; no database |
+| Export | jsPDF for composed PDFs; Plotly `toImage` for PNG capture |
 | Icons | Lucide React |
 
 ## Roadmap
@@ -253,7 +255,7 @@ The architecture follows the same pattern as LLMbench and Manifold Atlas: a thin
 - [ ] Annotation system for marking interesting geometric features
 - [ ] Base-model vs embedding-model comparison (generative vs embedding versions of the same backbone)
 - [ ] Persistent homology on internal representations
-- [ ] Export system (JSON, CSV, PNG, PDF)
+- [x] Export system: JSON, CSV, PNG, PDF on every operation (v0.4.0)
 - [ ] Packaged distribution (Tauri desktop app, `pipx` / `uvx` CLI, or Docker Compose)
 
 ## Related Work

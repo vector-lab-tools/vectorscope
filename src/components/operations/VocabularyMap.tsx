@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { EmbeddingTableResult } from "@/types/model";
@@ -9,11 +9,15 @@ const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 import { VOCABULARY_MAP_PRESETS } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
 
 export default function VocabularyMap() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<EmbeddingTableResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +61,7 @@ export default function VocabularyMap() {
   }, [result]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Vocabulary Map"
         summary="Samples the input embedding matrix and projects tokens into a navigable 3D map of the vocabulary. A search field highlights tokens matching a query; colour encodes token length. A way to see where morphemes, punctuation, whitespace tokens, and rare words sit relative to one another in the model's raw geometry."
@@ -122,6 +126,23 @@ export default function VocabularyMap() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Vocabulary Map"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Vocabulary Map",
+                pdfMetadata: [
+                  { label: "Vocab size", value: result.shape[0].toLocaleString() },
+                  { label: "Hidden dim", value: String(result.shape[1]) },
+                  { label: "Sample size", value: String(sampleSize) },
+                  ...(searchTerm ? [{ label: "Highlight", value: searchTerm }] : []),
+                ],
+              })}
+            />
+          </div>
           {/* Info bar */}
           <div className="card-editorial p-3">
             <div className="font-sans text-[11px] text-slate flex items-center gap-4 flex-wrap">

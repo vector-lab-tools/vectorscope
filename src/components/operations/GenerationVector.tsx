@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { Play, Pause, SkipBack, SkipForward, ArrowLeftRight, ChevronDown, ChevronUp } from "lucide-react";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 import { GENERATION_VECTOR_PRESETS } from "@/lib/presets/defaults";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
@@ -125,6 +127,8 @@ const PANELS: { id: PanelId; label: string }[] = [
 /* ------------------------------------------------------------------ */
 
 export default function GenerationVector() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [prompt, setPrompt] = useState("The nature of consciousness is");
   const [maxNewTokens, setMaxNewTokens] = useState(60);
   const [maxCap, setMaxCap] = useState(150);
@@ -461,7 +465,7 @@ export default function GenerationVector() {
   /* ================================================================ */
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Generation Vector"
         summary="Runs a full autoregressive generation from your prompt and instruments every step. A sticky header shows the prompt and the generated text as clickable token chips; horizontal panels below walk through tokenisation, embedding, attention, layer progression, the output distribution, and the final text. Click any word to focus all panels on it. Use the scrubber to replay generation token by token."
@@ -586,6 +590,27 @@ export default function GenerationVector() {
           )}
         </div>
       </div>
+
+      {state?.complete && (
+        <div className="flex justify-end">
+          <ExportMenu
+            operationName="Generation Vector"
+            modelName={backendStatus.model?.name}
+            getBundle={() => ({
+              json: state,
+              plotContainer: containerRef.current,
+              pdfTitle: "Generation Vector",
+              pdfSubtitle: `Prompt: ${state.prompt?.tokens.join("") ?? "—"}`,
+              pdfMetadata: [
+                { label: "Generated tokens", value: String(state.complete?.numGenerated ?? 0) },
+                { label: "Temperature", value: String(temperature) },
+                { label: "Top-p", value: String(topP) },
+                { label: "Top-k", value: String(topK) },
+              ],
+            })}
+          />
+        </div>
+      )}
 
       {state?.prompt && (
         <>

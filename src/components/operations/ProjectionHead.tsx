@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
 import OperationIntro from "@/components/OperationIntro";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -27,6 +29,8 @@ interface ProjectionHeadResult {
 }
 
 export default function ProjectionHead() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<ProjectionHeadResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +58,7 @@ export default function ProjectionHead() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Projection Head"
         summary="Extracts the output projection matrix (the layer that maps final hidden states back to vocabulary logits) and reports whether it is tied to the input embedding. Computes its norm statistics, effective rank, and isotropy, then projects sampled rows into 3D so you can compare the output geometry against the input embedding."
@@ -86,6 +90,23 @@ export default function ProjectionHead() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Projection Head"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Projection Head",
+                pdfMetadata: [
+                  { label: "Shape", value: `${result.shape[0]} × ${result.shape[1]}` },
+                  { label: "Weight tied", value: result.weightTied ? "yes" : "no" },
+                  { label: "Mean norm", value: result.stats.meanNorm.toFixed(3) },
+                  { label: "Effective rank", value: String(result.stats.effectiveRank) },
+                ],
+              })}
+            />
+          </div>
           {/* Weight tying notice */}
           {result.weightTied && (
             <div className="bg-cream/50 border border-parchment-dark rounded-sm p-3">

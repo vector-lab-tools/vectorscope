@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useRef, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { EmbeddingTableResult } from "@/types/model";
@@ -9,6 +9,7 @@ const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import Plot3DWrapper from "@/components/Plot3DWrapper";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
 import { EMBEDDING_TABLE_PRESETS } from "@/lib/presets/defaults";
 import { useModel } from "@/context/ModelContext";
 
@@ -125,6 +126,7 @@ const BACKEND_URL = "http://localhost:8000";
 export default function EmbeddingTable() {
   const { backendStatus } = useModel();
   const model = backendStatus.model;
+  const containerRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<EmbeddingTableResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,7 +158,7 @@ export default function EmbeddingTable() {
   }, [sampleSize]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Embedding Table"
         summary="Loads the model's full input embedding matrix and reports its geometric shape. Computes mean norm, effective rank, isotropy, and norm range across the vocabulary, then projects a random sample of tokens into 3D via PCA so you can see where words live in the model's internal space."
@@ -215,6 +217,22 @@ export default function EmbeddingTable() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Embedding Table"
+              modelName={model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Embedding Table",
+                pdfMetadata: [
+                  { label: "Vocab size", value: result.shape[0].toLocaleString() },
+                  { label: "Hidden dim", value: String(result.shape[1]) },
+                  { label: "Sample size", value: String(sampleSize) },
+                ],
+              })}
+            />
+          </div>
           {/* Stats cards */}
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
             <StatCard

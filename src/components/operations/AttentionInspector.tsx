@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
@@ -8,6 +8,7 @@ import { useModel } from "@/context/ModelContext";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
 import { ATTENTION_PRESETS, resolveLayer } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
@@ -33,6 +34,7 @@ interface AttentionResult {
 
 export default function AttentionInspector() {
   const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("The cat sat on the mat");
   const [layer, setLayer] = useState(0);
   const [selectedHead, setSelectedHead] = useState<number | "mean">("mean");
@@ -76,7 +78,7 @@ export default function AttentionInspector() {
       : null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Attention Inspector"
         summary="Runs a forward pass and extracts the raw attention weights for every head at a chosen layer. Visualises each head's attention matrix as a heatmap and reports per-head statistics (entropy, diagonal mass, peak weight) so you can see which heads spread their attention widely and which lock onto single tokens."
@@ -143,6 +145,23 @@ export default function AttentionInspector() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Attention Inspector"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Attention Inspector",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Layer", value: String(result.layer) },
+                  { label: "Heads", value: String(result.numHeads) },
+                  { label: "Seq len", value: String(result.seqLen) },
+                ],
+              })}
+            />
+          </div>
           {/* Head selector */}
           <div className="card-editorial p-3">
             <div className="flex items-center gap-1 flex-wrap">

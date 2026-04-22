@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { IsotropyResult } from "@/types/model";
+import type { CsvTable } from "@/lib/export";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 import { ISOTROPY_PRESETS } from "@/lib/presets/defaults";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
@@ -16,6 +19,8 @@ const DEFAULT_TEXT =
   "The cat sat on the mat. The dog barked at the door. Light filtered through the window and fell across the floor. Outside, traffic hummed and the city went about its business without noticing.";
 
 export default function IsotropyAnalysis() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(DEFAULT_TEXT);
   const [result, setResult] = useState<IsotropyResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,8 +58,38 @@ export default function IsotropyAnalysis() {
   const top10Series = result ? result.layers.map((l) => l.top10VarianceRatio) : [];
   const meanNormSeries = result ? result.layers.map((l) => l.meanNorm) : [];
 
+  const buildIsotropyCsv = (r: IsotropyResult): CsvTable[] => [
+    {
+      title: "Per-layer isotropy statistics",
+      headers: [
+        "layer",
+        "isotropy_score",
+        "mean_cos",
+        "mean_abs_cos",
+        "top1_variance_ratio",
+        "top3_variance_ratio",
+        "top10_variance_ratio",
+        "mean_norm",
+        "std_norm",
+        "sample_size",
+      ],
+      rows: r.layers.map((l) => [
+        l.layer,
+        l.isotropyScore,
+        l.meanCos,
+        l.meanAbsCos,
+        l.top1VarianceRatio,
+        l.top3VarianceRatio,
+        l.top10VarianceRatio,
+        l.meanNorm,
+        l.stdNorm,
+        l.sampleSize,
+      ]),
+    },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Isotropy Analysis"
         summary="Traces the anisotropy of hidden states through every layer of the model. Runs a prompt forward, pools each layer's token hidden states, and computes the isotropy score, mean pairwise cosine similarity, and top principal component variance ratios at each depth. Makes visible the phenomenon Ethayarajh (2019) identified: contextual representations collapse onto a common direction as you climb the stack."
@@ -125,6 +160,25 @@ export default function IsotropyAnalysis() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Isotropy Analysis"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                csvTables: buildIsotropyCsv(result),
+                plotContainer: containerRef.current,
+                pdfTitle: "Isotropy Analysis",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Layers", value: String(result.numLayers) },
+                  { label: "Hidden size", value: String(result.hiddenSize) },
+                  { label: "Tokens", value: String(result.tokens.length) },
+                ],
+                pdfSummaryTables: buildIsotropyCsv(result),
+              })}
+            />
+          </div>
           {/* Top-line numbers */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
             <SummaryCard

@@ -8,6 +8,8 @@ import Plot3DWrapper from "@/components/Plot3DWrapper";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 import { MANIFOLD_FORMATION_PRESETS } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
@@ -31,6 +33,8 @@ interface ManifoldResult {
 }
 
 export default function ManifoldFormation() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("The cat sat on the mat");
   const [result, setResult] = useState<ManifoldResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,7 +92,7 @@ export default function ManifoldFormation() {
   const layerData = result?.layers[currentLayer];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Manifold Formation"
         summary="Runs a forward pass and projects every token at every layer into a shared 3D space via PCA. An animation control lets you scrub through the depths of the model and watch the cloud of tokens deform layer by layer, showing how local context pulls words into clusters and how the manifold takes shape."
@@ -140,6 +144,23 @@ export default function ManifoldFormation() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Manifold Formation"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                plotContainer: containerRef.current,
+                pdfTitle: "Manifold Formation",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Tokens", value: String(result.tokens.length) },
+                  { label: "Layers", value: String(result.numLayers) },
+                  { label: "Current layer", value: String(currentLayer) },
+                ],
+              })}
+            />
+          </div>
           {/* Playback controls */}
           <div className="card-editorial p-3">
             <div className="flex items-center gap-3">

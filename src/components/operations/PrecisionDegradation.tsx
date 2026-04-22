@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type {
@@ -9,6 +9,8 @@ import type {
 } from "@/types/model";
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
+import { useModel } from "@/context/ModelContext";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
@@ -79,6 +81,8 @@ const PRECISION_COLOR: Record<string, string> = {
 };
 
 export default function PrecisionDegradation() {
+  const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(DEFAULT_TEXT);
   const [selected, setSelected] = useState<string[]>(["float16", "int8", "int4"]);
   const [result, setResult] = useState<PrecisionDegradationResult | null>(null);
@@ -143,7 +147,7 @@ export default function PrecisionDegradation() {
     })) ?? [];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Precision Degradation"
         summary="The Signal Degradation Laboratory in miniature. Runs the same prompt through the loaded model at baseline precision, then at each selected target precision (bf16 / fp16 / int8 / int4 / int2), comparing hidden states layer-by-layer and final predictions at the output. Quantisation is applied in-process via round-to-nearest fake-quant, so all observed differences come from the weights losing grain rather than from a different model."
@@ -254,6 +258,55 @@ export default function PrecisionDegradation() {
       {/* Results */}
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Precision Degradation"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                csvTables: [
+                  {
+                    title: "Output metrics per precision",
+                    headers: [
+                      "precision",
+                      "argmax_match",
+                      "kl_nats",
+                      "topk_overlap",
+                      "entropy_ref_bits",
+                      "entropy_quant_bits",
+                    ],
+                    rows: result.precisions.map((p) => [
+                      p.label,
+                      p.output.argmaxMatch ? 1 : 0,
+                      p.output.klDivergence,
+                      p.output.topKOverlap,
+                      p.output.entropyRef,
+                      p.output.entropyQuant,
+                    ]),
+                  },
+                  ...result.precisions.map((p) => ({
+                    title: `Per-layer metrics — ${p.label}`,
+                    headers: ["layer", "mse", "rel_err", "mean_cos", "min_cos"],
+                    rows: p.layers.map((l) => [
+                      l.layer,
+                      l.mse,
+                      l.relError,
+                      l.meanCosine,
+                      l.minCosine,
+                    ]),
+                  })),
+                ],
+                plotContainer: containerRef.current,
+                pdfTitle: "Precision Degradation",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Baseline dtype", value: result.baselineDtype },
+                  { label: "Layers", value: String(result.numLayers) },
+                  { label: "Target precisions", value: result.precisions.map((p) => p.label).join(", ") },
+                ],
+              })}
+            />
+          </div>
           {result.memoryWarning && (
             <div className="bg-warning-50 border border-warning-500/30 text-warning-700 px-4 py-2 rounded-sm font-sans text-caption">
               <strong>Memory warning.</strong> This model is{" "}

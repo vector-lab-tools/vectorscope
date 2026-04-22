@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
@@ -8,6 +8,7 @@ import { useModel } from "@/context/ModelContext";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import OperationIntro from "@/components/OperationIntro";
 import PresetChipRow from "@/components/PresetChipRow";
+import ExportMenu from "@/components/ExportMenu";
 import { LAYER_PROBE_PRESETS, resolveLayer } from "@/lib/presets/defaults";
 
 const BACKEND_URL = "http://localhost:8000";
@@ -25,6 +26,7 @@ interface LayerProbeResult {
 
 export default function LayerProbe() {
   const { backendStatus } = useModel();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("The cat sat on the mat");
   const [layer, setLayer] = useState(6);
   const [result, setResult] = useState<LayerProbeResult | null>(null);
@@ -57,7 +59,7 @@ export default function LayerProbe() {
   }, [text, layer]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-4" ref={containerRef}>
       <OperationIntro
         name="Layer Probe"
         summary="Freezes a forward pass at a chosen layer and extracts the hidden-state vector for every token. Reports per-token norms and the pairwise cosine similarity matrix across the sequence. Lets you inspect how much each token has been pulled toward its neighbours at a specific depth in the model."
@@ -121,6 +123,29 @@ export default function LayerProbe() {
 
       {result && (
         <>
+          <div className="flex justify-end">
+            <ExportMenu
+              operationName="Layer Probe"
+              modelName={backendStatus.model?.name}
+              getBundle={() => ({
+                json: result,
+                csvTables: [
+                  {
+                    title: "Per-token norms",
+                    headers: ["position", "token", "norm"],
+                    rows: result.tokens.map((tok, i) => [i, tok, result.norms[i]]),
+                  },
+                ],
+                plotContainer: containerRef.current,
+                pdfTitle: "Layer Probe",
+                pdfSubtitle: `Input: ${result.inputText}`,
+                pdfMetadata: [
+                  { label: "Layer", value: String(result.layer) },
+                  { label: "Tokens", value: String(result.tokens.length) },
+                ],
+              })}
+            />
+          </div>
           {/* Token info */}
           <div className="card-editorial p-3">
             <div className="flex items-center gap-2 flex-wrap font-sans text-[11px]">
