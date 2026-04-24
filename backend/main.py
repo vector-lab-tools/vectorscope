@@ -27,7 +27,7 @@ from operations.precision_degradation import (
     SUPPORTED_PRECISIONS,
 )
 from operations.local_model import inspect_local_model
-from operations.grammar_steering import compute_grammar_steering
+from operations.grammar_steering import compute_grammar_steering, generate_with_steering
 from config.presets import load_presets
 
 app = FastAPI(title="Vectorscope Backend", version="0.1.0")
@@ -122,6 +122,17 @@ class ContrastivePair(BaseModel):
 class GrammarSteeringRequest(BaseModel):
     pairs: List[ContrastivePair]
     pca_layer: Optional[int] = None
+
+
+class GrammarSteeringGenerateRequest(BaseModel):
+    pairs: List[ContrastivePair]
+    layer: int
+    scales: List[float]
+    prompt: str
+    max_new_tokens: int = 80
+    temperature: float = 0.8
+    top_p: float = 0.9
+    top_k: int = 40
 
 
 @app.get("/status")
@@ -337,6 +348,29 @@ async def grammar_steering(req: GrammarSteeringRequest):
     try:
         pairs = [p.model_dump() for p in req.pairs]
         return await asyncio.to_thread(compute_grammar_steering, pairs, req.pca_layer)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/grammar-steering/generate")
+async def grammar_steering_generate(req: GrammarSteeringGenerateRequest):
+    """Phase 2: extract + intervene. Generates at each `scale` with a forward
+    hook adding `scale * steering_vector` to the residual stream at `layer`."""
+    try:
+        pairs = [p.model_dump() for p in req.pairs]
+        return await asyncio.to_thread(
+            generate_with_steering,
+            pairs,
+            req.layer,
+            req.scales,
+            req.prompt,
+            req.max_new_tokens,
+            req.temperature,
+            req.top_p,
+            req.top_k,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

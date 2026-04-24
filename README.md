@@ -17,7 +17,7 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.5.0
+**Version:** 0.6.0
 **Date:** 24 April 2026
 **Licence:** MIT
 
@@ -99,7 +99,7 @@ Operations in the Critique group are interpretive rather than descriptive. They 
 - **Vocabulary Map.** Global topology of the vocabulary embedding space. 3D scatter with token search and highlight, norm distribution, the whole lexicon in one view.
 - **Isotropy Analysis.** Effective dimensionality and direction concentration per layer. Cosine-similarity histograms at first, middle, and last layer; top-1 / 3 / 10 principal component variance ratios; mean-norm trajectory. Connects directly to the vector-conformism thesis: anisotropic geometries pull concepts toward dominant axes.
 - **Precision Degradation.** The Signal Degradation Laboratory in miniature. Runs a prompt through the loaded model at baseline precision and at each selected target (bf16, fp16, int8, int4, int2), comparing hidden states layer-by-layer and final predictions at the output. Uses in-process fake-quantisation via round-to-nearest — no pre-quantised variant is loaded, so all observed differences come from the weights losing grain rather than from a different model. Per-precision summary cards (argmax match, KL divergence, top-K overlap), per-layer cosine and relative-error plots, side-by-side top-5 prediction table.
-- **Grammar Steering.** Contrastive Activation Addition (Turner et al. 2023; Rimsky et al. 2024). Takes matched (positive, negative) prompt pairs — positive carries a rhetorical pattern, negative is the same topic without it — and extracts a per-layer steering vector: the mean-activation difference. Per-layer norm trajectory and leave-one-out separability show at which depth the pattern lives; a 3D PCA scatter of the two populations makes the separation visible. Ships with a 12-pair &ldquo;Not X but Y&rdquo; rhetorical-antithesis preset. This is Phase 1 of the Grammar Steering work (extraction and geometry); Phase 2 (forward-pass intervention) is the next development target.
+- **Grammar Steering.** Contrastive Activation Addition (Turner et al. 2023; Rimsky et al. 2024). Takes matched (positive, negative) prompt pairs — positive carries a rhetorical pattern, negative is the same topic without it — and extracts a per-layer steering vector: the mean-activation difference. Per-layer norm trajectory and leave-one-out separability show at which depth the pattern lives; a 3D PCA scatter of the two populations makes the separation visible. A generation panel then intervenes: a PyTorch forward hook on the chosen transformer block adds `scale × steering_vector` to the residual stream every step, and one generation is run per scale, side by side. Negative scales suppress the pattern; positive amplify it; zero is the untouched baseline. If the pattern can be turned on and off by a single vector, that vector *is* its internal representation. Ships with a 12-pair &ldquo;Not X but Y&rdquo; rhetorical-antithesis preset.
 
 ## General Features
 
@@ -259,7 +259,7 @@ The architecture follows the same pattern as LLMbench and Manifold Atlas: a thin
 - [ ] Persistent homology on internal representations
 - [x] Export system: JSON, CSV, PNG, PDF on every operation (v0.4.0)
 - [x] Grammar Steering Phase 1: contrastive activation vector extraction (v0.5.0)
-- [ ] Grammar Steering Phase 2: forward-pass intervention (activation addition during generation)
+- [x] Grammar Steering Phase 2: forward-pass intervention, multi-scale generation side-by-side (v0.6.0)
 - [ ] Packaged distribution (Tauri desktop app, `pipx` / `uvx` CLI, or Docker Compose)
 
 ## Related Work

@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { GrammarSteeringResult } from "@/types/model";
+import type { GrammarSteeringResult, GrammarSteeringGenerateResult } from "@/types/model";
 import OperationIntro from "@/components/OperationIntro";
 import ExportMenu from "@/components/ExportMenu";
 import Plot3DWrapper from "@/components/Plot3DWrapper";
@@ -95,6 +95,16 @@ export default function GrammarSteering() {
   const [error, setError] = useState<string | null>(null);
   const [deepDiveOpen, setDeepDiveOpen] = useState(false);
 
+  // Phase 2 state
+  const [genPrompt, setGenPrompt] = useState("The purpose of philosophy");
+  const [genLayer, setGenLayer] = useState<number | null>(null);
+  const [genScales, setGenScales] = useState("-3, 0, 3");
+  const [genMaxTokens, setGenMaxTokens] = useState(40);
+  const [genTemp, setGenTemp] = useState(0.8);
+  const [genResult, setGenResult] = useState<GrammarSteeringGenerateResult | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
   const parsed = useMemo(() => parsePairs(src), [src]);
 
   const run = useCallback(async () => {
@@ -126,6 +136,77 @@ export default function GrammarSteering() {
       setLoading(false);
     }
   }, [parsed.pairs, selectedLayer]);
+
+  // Default intervention layer = peak separability, minus the first pass
+  // through where it's still 0.5ish. Pick the first layer where separability
+  // is highest. If not computed yet, 1 is a safe minimum.
+  const defaultGenLayer = useMemo(() => {
+    if (!result) return 1;
+    let best = 1;
+    let bestSep = -1;
+    for (const l of result.layers) {
+      if (l.layer === 0) continue;
+      if (l.layer === result.numLayers - 1) continue; // skip final (reabsorbed)
+      if (l.separability > bestSep) {
+        bestSep = l.separability;
+        best = l.layer;
+      }
+    }
+    return best;
+  }, [result]);
+
+  const effectiveGenLayer = genLayer ?? defaultGenLayer;
+
+  const parsedScales = useMemo(() => {
+    return genScales
+      .split(/[,\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => parseFloat(s))
+      .filter((n) => Number.isFinite(n));
+  }, [genScales]);
+
+  const runGenerate = useCallback(async () => {
+    if (parsed.pairs.length < 2) {
+      setGenError("Need at least 2 valid pairs.");
+      return;
+    }
+    if (!genPrompt.trim()) {
+      setGenError("Prompt is empty.");
+      return;
+    }
+    if (parsedScales.length === 0) {
+      setGenError("At least one numeric scale required (comma-separated).");
+      return;
+    }
+    setGenLoading(true);
+    setGenError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/grammar-steering/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pairs: parsed.pairs,
+          layer: effectiveGenLayer,
+          scales: parsedScales,
+          prompt: genPrompt,
+          max_new_tokens: genMaxTokens,
+          temperature: genTemp,
+          top_p: 0.9,
+          top_k: 40,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Generation failed");
+      }
+      setGenResult(await res.json());
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setGenLoading(false);
+    }
+  }, [parsed.pairs, parsedScales, genPrompt, effectiveGenLayer, genMaxTokens, genTemp]);
 
   // Re-run when the layer slider moves only if the backend hasn't already
   // produced that layer's PCA (it always computes ALL layers' stats, but PCA
@@ -532,6 +613,179 @@ export default function GrammarSteering() {
                 </table>
                 <p className="font-sans text-[10px] text-slate/60 mt-2">
                   Full steering vectors (hidden_size × num_layers floats) are in the JSON export.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Phase 2 — Generation intervention */}
+          <div className="card-editorial p-4 space-y-3 border-burgundy/30">
+            <div>
+              <div className="font-display text-heading-sm font-semibold">
+                Generate with steering <span className="text-slate/60 text-[11px] font-normal">— Phase 2</span>
+              </div>
+              <p className="font-sans text-[11px] text-slate/70 mt-1">
+                Register a PyTorch forward hook on block {effectiveGenLayer - 1} that adds{" "}
+                <code className="bg-parchment px-1 rounded">scale × steering_vector</code> to
+                the residual stream every generation step. Run one generation per scale. Negative
+                scales <em>suppress</em> the pattern; positive scales <em>amplify</em> it;
+                scale 0 is the untouched baseline.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="gen-prompt" className="font-sans text-[11px] text-slate block mb-1">
+                Prompt
+              </label>
+              <textarea
+                id="gen-prompt"
+                value={genPrompt}
+                onChange={(e) => setGenPrompt(e.target.value)}
+                rows={2}
+                className="input-editorial w-full font-mono text-[11px]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="font-sans text-[10px] text-slate block mb-1">
+                  Layer (1–{result.numLayers - 1})
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={result.numLayers - 1}
+                  value={effectiveGenLayer}
+                  onChange={(e) => setGenLayer(parseInt(e.target.value, 10))}
+                  className="input-editorial w-full text-[11px] py-1"
+                />
+                <div className="text-[9px] text-slate/60 mt-0.5">
+                  default = peak separability
+                </div>
+              </div>
+              <div>
+                <label className="font-sans text-[10px] text-slate block mb-1">
+                  Scales (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={genScales}
+                  onChange={(e) => setGenScales(e.target.value)}
+                  className="input-editorial w-full text-[11px] py-1 font-mono"
+                  placeholder="-3, 0, 3"
+                />
+                <div className="text-[9px] text-slate/60 mt-0.5">
+                  parsed: {parsedScales.length === 0 ? "—" : parsedScales.join(", ")}
+                </div>
+              </div>
+              <div>
+                <label className="font-sans text-[10px] text-slate block mb-1">
+                  Max new tokens
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={400}
+                  value={genMaxTokens}
+                  onChange={(e) => setGenMaxTokens(parseInt(e.target.value, 10))}
+                  className="input-editorial w-full text-[11px] py-1"
+                />
+              </div>
+              <div>
+                <label className="font-sans text-[10px] text-slate block mb-1">
+                  Temperature
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={genTemp}
+                  onChange={(e) => setGenTemp(parseFloat(e.target.value))}
+                  className="input-editorial w-full text-[11px] py-1"
+                />
+                <div className="text-[9px] text-slate/60 mt-0.5">
+                  0 = greedy
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={runGenerate}
+                disabled={genLoading || parsedScales.length === 0 || !genPrompt.trim()}
+                className="btn-editorial-primary"
+              >
+                {genLoading
+                  ? `Generating ${parsedScales.length}×…`
+                  : `Generate (${parsedScales.length} scales)`}
+              </button>
+              {genError && (
+                <span className="text-red-600 font-sans text-[11px]">{genError}</span>
+              )}
+            </div>
+
+            {genResult && (
+              <div className="pt-2 border-t border-parchment/60">
+                <div className="font-sans text-[11px] text-slate mb-2">
+                  Intervened at layer <span className="font-mono">{genResult.layer}</span>
+                  {" "}(block {genResult.blockIndex}) · ‖vec‖ ={" "}
+                  <span className="font-mono">{genResult.steeringVectorNorm.toFixed(2)}</span>
+                  {" "}· separability ={" "}
+                  <span className="font-mono">{genResult.separabilityAtLayer.toFixed(2)}</span>
+                </div>
+                <div
+                  className="grid gap-3"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.min(genResult.generations.length, 3)}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {genResult.generations.map((g) => (
+                    <div
+                      key={g.scale}
+                      className={
+                        "rounded-sm border p-3 " +
+                        (g.scale === 0
+                          ? "border-parchment-dark bg-cream/30"
+                          : g.scale < 0
+                          ? "border-[#0b7285]/40 bg-[#0b7285]/5"
+                          : "border-burgundy/40 bg-burgundy/5")
+                      }
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span
+                          className="font-mono text-[11px] font-semibold"
+                          style={{
+                            color:
+                              g.scale === 0
+                                ? "#334155"
+                                : g.scale < 0
+                                ? "#0b7285"
+                                : "#862e9c",
+                          }}
+                        >
+                          scale = {g.scale >= 0 ? "+" : ""}
+                          {g.scale}
+                        </span>
+                        <span className="text-[10px] text-slate/60">
+                          {g.numGenerated} tok
+                        </span>
+                      </div>
+                      <div className="font-serif text-[12px] text-ink leading-relaxed whitespace-pre-wrap">
+                        <span className="text-slate/60">{genResult.prompt}</span>
+                        <span className="text-ink">
+                          {g.fullText.startsWith(genResult.prompt)
+                            ? g.fullText.slice(genResult.prompt.length)
+                            : g.fullText}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="font-sans text-[10px] text-slate/60 mt-2">
+                  Baseline (scale 0) is unsteered. Negative scales suppress the
+                  pattern; positive amplify it. If the pattern appears and disappears under a
+                  single knob, the steering vector captures an internal representation of it.
                 </p>
               </div>
             )}

@@ -126,6 +126,31 @@ export interface GrammarSteeringResult {
   pairs: { positive: string; negative: string }[];
 }
 
+export interface GrammarSteeringGeneration {
+  scale: number;
+  fullText: string;
+  generatedText: string;
+  generatedTokenIds: number[];
+  numGenerated: number;
+}
+
+export interface GrammarSteeringGenerateResult {
+  prompt: string;
+  layer: number;
+  blockIndex: number;
+  scales: number[];
+  samplingConfig: {
+    maxNewTokens: number;
+    temperature: number;
+    topP: number;
+    topK: number;
+  };
+  steeringVectorNorm: number;
+  separabilityAtLayer: number;
+  extraction: GrammarSteeringResult;
+  generations: GrammarSteeringGeneration[];
+}
+
 export interface LocalModelConfig {
   modelType: string | null;
   architectures: string[];

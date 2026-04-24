@@ -1,5 +1,5 @@
 """
-Grammar Steering — Phase 1: contrastive activation vector extraction.
+Grammar Steering — Phase 1 (extraction) and Phase 2 (intervention).
 
 Theoretical background
 ----------------------
@@ -222,4 +222,183 @@ def compute_grammar_steering(
             "explainedVariance": pca["explainedVariance"],
         },
         "pairs": cleaned,
+    }
+
+
+# ============================================================================
+# Phase 2 — intervention via forward hook on the residual stream.
+# ============================================================================
+
+
+def _find_transformer_blocks(model):
+    """Locate the transformer block list across common HuggingFace architectures.
+
+    Returns an nn.ModuleList-like sequence whose index i is the i-th
+    transformer block. Raises ValueError if the architecture isn't recognised.
+    """
+    # Common paths. Order matters — check modern before legacy.
+    candidates = [
+        ("model", "layers"),         # Llama, Mistral, Qwen family
+        ("transformer", "h"),         # GPT-2
+        ("transformer", "blocks"),    # some custom
+        ("gpt_neox", "layers"),       # GPT-NeoX
+        ("model", "h"),               # fallback
+    ]
+    for path in candidates:
+        obj = model
+        ok = True
+        for attr in path:
+            obj = getattr(obj, attr, None)
+            if obj is None:
+                ok = False
+                break
+        if ok and hasattr(obj, "__getitem__") and hasattr(obj, "__len__"):
+            return obj
+    raise ValueError(
+        "Could not locate the transformer block list for this architecture. "
+        "Grammar Steering intervention currently supports GPT-2, Llama, Mistral, "
+        "Qwen, and close relatives."
+    )
+
+
+def _make_steering_hook(scaled_vector: torch.Tensor):
+    """
+    Build a forward hook that adds `scaled_vector` (shape: hidden_dim,) to the
+    residual stream. The block's output is typically a tuple whose first
+    element is the hidden-state tensor, shape (batch, seq_len, hidden_dim).
+    Broadcasting adds the vector to every position and every batch element.
+    """
+
+    def hook(_module, _inputs, output):
+        if isinstance(output, tuple):
+            if len(output) == 0:
+                return output
+            hs = output[0]
+            return (hs + scaled_vector,) + output[1:]
+        return output + scaled_vector
+
+    return hook
+
+
+def generate_with_steering(
+    pairs: List[Dict[str, str]],
+    layer: int,
+    scales: List[float],
+    prompt: str,
+    max_new_tokens: int = 80,
+    temperature: float = 0.8,
+    top_p: float = 0.9,
+    top_k: int = 40,
+) -> Dict[str, Any]:
+    """
+    Phase 2. Extract the steering vector at `layer` from the contrastive
+    pairs, then run autoregressive generation from `prompt` at each value in
+    `scales`. For each scale we register a PyTorch forward hook on the target
+    transformer block that adds `scale × steering_vector` to the residual
+    stream every forward step, generate `max_new_tokens` tokens, remove the
+    hook, and capture the output text.
+
+    Positive scales amplify the pattern the contrastive pairs encode;
+    negative scales suppress it; scale=0 is the baseline generation (no
+    intervention).
+
+    Layer convention matches Phase 1: layer ℓ corresponds to the output of
+    transformer block (ℓ-1). We require ℓ ≥ 1 because layer 0 is the
+    embedding layer, which needs a different hook point; supporting it is a
+    future extension.
+    """
+    if session.model is None or session.tokenizer is None:
+        raise ValueError("No model loaded")
+    if not prompt or not prompt.strip():
+        raise ValueError("Prompt is empty.")
+    if not scales:
+        raise ValueError("At least one scale is required.")
+    if max_new_tokens < 1 or max_new_tokens > 400:
+        raise ValueError("max_new_tokens must be between 1 and 400.")
+
+    # Extract the per-layer vectors first; this also validates the pairs and
+    # gives us the PCA / diagnostics we'll include in the response.
+    extraction = compute_grammar_steering(pairs, pca_layer=layer)
+    num_layers = int(extraction["numLayers"])
+    if layer < 1 or layer >= num_layers:
+        raise ValueError(
+            f"Intervention layer must be in [1, {num_layers - 1}]. "
+            f"Layer 0 is the embedding layer and is not supported for intervention."
+        )
+
+    model = session.model
+    tokenizer = session.tokenizer
+    blocks = _find_transformer_blocks(model)
+    block_idx = layer - 1  # layer ℓ = output of block (ℓ-1)
+    if block_idx < 0 or block_idx >= len(blocks):
+        raise ValueError(
+            f"Computed block index {block_idx} out of range [0, {len(blocks) - 1}]."
+        )
+    target_block = blocks[block_idx]
+
+    # Steering vector for this layer, on-device and in the model's dtype so
+    # the hook's addition doesn't force a cast every forward step.
+    base_vec = torch.tensor(
+        extraction["layers"][layer]["steeringVector"], dtype=torch.float32
+    )
+    model_dtype = next(model.parameters()).dtype
+    base_vec = base_vec.to(device=model.device, dtype=model_dtype)
+
+    # Pad token fallback for models (e.g. GPT-2) that don't set one.
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    prompt_len = int(inputs["input_ids"].shape[1])
+
+    generations: List[Dict[str, Any]] = []
+
+    for scale in scales:
+        scaled = base_vec * float(scale)
+        hook_handle = target_block.register_forward_hook(_make_steering_hook(scaled))
+        try:
+            with torch.no_grad():
+                output_ids = model.generate(
+                    **inputs,
+                    max_new_tokens=int(max_new_tokens),
+                    do_sample=temperature > 0,
+                    temperature=float(temperature) if temperature > 0 else 1.0,
+                    top_p=float(top_p),
+                    top_k=int(top_k),
+                    pad_token_id=pad_id,
+                )
+        finally:
+            hook_handle.remove()
+
+        full_ids = output_ids[0].tolist()
+        generated_ids = full_ids[prompt_len:]
+        full_text = tokenizer.decode(full_ids, skip_special_tokens=True)
+        generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
+
+        generations.append(
+            {
+                "scale": float(scale),
+                "fullText": full_text,
+                "generatedText": generated_text,
+                "generatedTokenIds": generated_ids,
+                "numGenerated": len(generated_ids),
+            }
+        )
+
+    return {
+        "prompt": prompt,
+        "layer": layer,
+        "blockIndex": block_idx,
+        "scales": [float(s) for s in scales],
+        "samplingConfig": {
+            "maxNewTokens": int(max_new_tokens),
+            "temperature": float(temperature),
+            "topP": float(top_p),
+            "topK": int(top_k),
+        },
+        "steeringVectorNorm": extraction["layers"][layer]["steeringNorm"],
+        "separabilityAtLayer": extraction["layers"][layer]["separability"],
+        "extraction": extraction,
+        "generations": generations,
     }
