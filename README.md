@@ -17,8 +17,8 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.6.0
-**Date:** 24 April 2026
+**Version:** 0.6.1
+**Date:** 13 June 2026
 **Licence:** MIT
 
 
@@ -260,6 +260,7 @@ The architecture follows the same pattern as LLMbench and Manifold Atlas: a thin
 - [x] Export system: JSON, CSV, PNG, PDF on every operation (v0.4.0)
 - [x] Grammar Steering Phase 1: contrastive activation vector extraction (v0.5.0)
 - [x] Grammar Steering Phase 2: forward-pass intervention, multi-scale generation side-by-side (v0.6.0)
+- [x] Canonical Vector Lab branding refresh: new VL polygon family mark (navy `#0a1f44`), tool-icon bronze tightened to `#a8854d` (v0.6.1)
 - [ ] Packaged distribution (Tauri desktop app, `pipx` / `uvx` CLI, or Docker Compose)
 
 ## Related Work

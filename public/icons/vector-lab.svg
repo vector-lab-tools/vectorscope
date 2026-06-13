@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <title>Vectorscope</title>
   <!-- Concentric rings: model layers -->
-  <g stroke="#b8941e" fill="none" stroke-width="1.1">
+  <g stroke="#a8854d" fill="none" stroke-width="1.1">
     <circle cx="32" cy="32" r="26" stroke-opacity="0.4"/>
     <circle cx="32" cy="32" r="20" stroke-opacity="0.6"/>
     <circle cx="32" cy="32" r="14" stroke-opacity="0.8"/>
@@ -13,5 +13,5 @@
     <path d="M 24 28 L 28 32 L 24 36"/>
   </g>
   <!-- Origin -->
-  <circle cx="32" cy="32" r="1.75" fill="#b8941e"/>
+  <circle cx="32" cy="32" r="1.75" fill="#a8854d"/>
 </svg>
