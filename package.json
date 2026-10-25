@@ -1,7 +1,9 @@
 {
   "name": "vectorscope",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": true,
+  "license": "GPL-3.0-or-later",
+  "author": "David M. Berry",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

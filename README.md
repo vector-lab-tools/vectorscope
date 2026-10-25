@@ -17,9 +17,9 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.6.1
-**Date:** 13 June 2026
-**Licence:** MIT
+**Version:** 0.7.0
+**Date:** 25 October 2026
+**Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE` and `COPYING`. All prior versions are retroactively relicensed under the same terms.
 
 
 
@@ -284,4 +284,6 @@ The backend builds on the [HuggingFace Transformers](https://github.com/huggingf
 
 ## Licence
 
-MIT
+Vectorscope is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See `LICENSE` for the notice and `COPYING` for the full licence text.
+
+As sole copyright holder, David M. Berry has retroactively relicensed all prior versions of Vectorscope (through v0.6.1) under the same GPL-3.0-or-later terms, superseding the earlier MIT statement.
