@@ -69,7 +69,7 @@ export default function AboutDialog() {
               </div>
               <div className="flex justify-between">
                 <span>Licence</span>
-                <span>MIT</span>
+                <span>GPL-3.0-or-later</span>
               </div>
             </div>
 
