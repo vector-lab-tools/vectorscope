@@ -13,14 +13,17 @@
 
 # Vectorscope
 
+[![DOI](https://zenodo.org/badge/1210919785.svg)](https://zenodo.org/badge/latestdoi/1210919785)
+
 **Internal geometry of open-weight language models.**
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.7.1
+**Version:** 0.7.2
 **Date:** 27 October 2026
 **Docs:** [vector-lab-tools.github.io/vectorscope](https://vector-lab-tools.github.io/vectorscope/)
 **Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE` and `COPYING`. All prior versions are retroactively relicensed under the same terms.
+**Archive:** Each tagged release is archived on Zenodo and assigned a version DOI; the badge above resolves to the latest.
 
 
 
@@ -276,6 +279,14 @@ The architecture follows the same pattern as LLMbench and Manifold Atlas: a thin
 - Montfort, N. et al. (2013) *10 PRINT CHR$(205.5+RND(1)); : GOTO 10*. MIT Press.
 - Rimsky, N. et al. (2024) 'Steering Llama 2 via Contrastive Activation Addition'. *arXiv:2312.06681*.
 - Turner, A. et al. (2023) 'Activation Addition: Steering Language Models Without Optimization'. *arXiv:2308.10248*.
+
+## Citation
+
+If Vectorscope is useful for your work, please cite the archived release:
+
+> Berry, D. M. (2026). *Vectorscope: a workbench for inspecting the vector medium of open-weight language models.* Zenodo. https://zenodo.org/badge/latestdoi/1210919785
+
+The DOI badge at the top of this README resolves to the most recent archived release. A `CITATION.cff` file at the repository root carries the same metadata in machine-readable form; GitHub picks it up for the "Cite this repository" button, and Zenodo reads it when minting each version DOI.
 
 ## Acknowledgements
 

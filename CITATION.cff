@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use Vectorscope in your work, please cite it as below."
+title: "Vectorscope: a workbench for inspecting the vector medium of open-weight language models"
+abstract: >-
+  Vectorscope loads an open-weight language model locally and makes its internal
+  geometry visible: embedding tables, projection head, attention patterns, hidden
+  states across layers, and autoregressive generation. The Critique group
+  implements contrastive activation extraction and forward-pass steering. Part of
+  the Vector Lab family of research instruments.
+type: software
+authors:
+  - family-names: Berry
+    given-names: David M.
+    affiliation: University of Sussex
+repository-code: "https://github.com/vector-lab-tools/vectorscope"
+url: "https://vector-lab-tools.github.io/vectorscope/"
+license: GPL-3.0-or-later
+version: 0.7.2
+date-released: 2026-10-27
+keywords:
+  - large language models
+  - interpretability
+  - vector space
+  - critical theory
+  - digital humanities
+  - transformer
+  - mechanistic interpretability
+  - activation steering
