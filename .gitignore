@@ -45,3 +45,6 @@ __pycache__/
 *.py[cod]
 backend/.venv/
 *.egg-info/
+
+# Local scratch inbox (never commit)
+_tmp/
