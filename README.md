@@ -17,8 +17,9 @@
 
 **Author:** David M. Berry
 **Institution:** University of Sussex
-**Version:** 0.7.0
-**Date:** 25 October 2026
+**Version:** 0.7.1
+**Date:** 27 October 2026
+**Docs:** [vector-lab-tools.github.io/vectorscope](https://vector-lab-tools.github.io/vectorscope/)
 **Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE` and `COPYING`. All prior versions are retroactively relicensed under the same terms.
 
 
@@ -143,7 +144,7 @@ Vectorscope is two coordinated processes: a Python backend that loads the model 
 ### Installation
 
 ```bash
-git clone https://github.com/dmberry/vectorscope.git
+git clone https://github.com/vector-lab-tools/vectorscope.git
 cd vectorscope
 ```
 

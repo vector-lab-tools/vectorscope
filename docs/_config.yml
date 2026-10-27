@@ -1,0 +1,23 @@
+title: Vectorscope
+description: A workbench for inspecting the vector medium of open-weight LLMs.
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-relative-links
+
+url: https://vector-lab-tools.github.io
+baseurl: /vectorscope
+
+author: David M. Berry
+
+show_downloads: false
+
+github:
+  repository_url: https://github.com/vector-lab-tools/vectorscope
+  repository_nwo: vector-lab-tools/vectorscope
+  owner_name: vector-lab-tools
+
+exclude:
+  - README.md
+  - screenshots/README.md
