@@ -13,8 +13,6 @@
 
 # Vectorscope
 
-[![DOI](https://zenodo.org/badge/1210919785.svg)](https://zenodo.org/badge/latestdoi/1210919785)
-
 **Internal geometry of open-weight language models.**
 
 **Author:** David M. Berry
@@ -286,7 +284,9 @@ If Vectorscope is useful for your work, please cite the archived release:
 
 > Berry, D. M. (2026). *Vectorscope: a workbench for inspecting the vector medium of open-weight language models* (Version 0.7.3) [Software]. Zenodo. https://zenodo.org/badge/latestdoi/1210919785
 
-The DOI badge at the top of this README resolves to the most recent archived release. A `CITATION.cff` file at the repository root carries the same metadata in machine-readable form; GitHub picks it up for the "Cite this repository" button, and Zenodo reads it when minting each version DOI.
+[![DOI](https://zenodo.org/badge/1210919785.svg)](https://zenodo.org/badge/latestdoi/1210919785)
+
+The badge resolves to the most recent archived release. A `CITATION.cff` file at the repository root carries the same metadata in machine-readable form; GitHub picks it up for the "Cite this repository" button, and Zenodo reads it when minting each version DOI.
 
 ## Acknowledgements
 
