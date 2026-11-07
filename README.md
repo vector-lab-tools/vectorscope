@@ -20,7 +20,7 @@
 **Version:** 0.7.3
 **Date:** 27 October 2026
 **Docs:** [vector-lab-tools.github.io/vectorscope](https://vector-lab-tools.github.io/vectorscope/)
-**Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE` and `COPYING`. All prior versions are retroactively relicensed under the same terms.
+**Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE`; the relicensing notice is in `NOTICE`. All prior versions are retroactively relicensed under the same terms.
 **Archive:** Each tagged release is archived on Zenodo and assigned a version DOI; the badge above resolves to the latest.
 
 
