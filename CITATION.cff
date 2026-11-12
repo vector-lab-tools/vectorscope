@@ -6,7 +6,10 @@ abstract: >-
   geometry visible: embedding tables, projection head, attention patterns, hidden
   states across layers, and autoregressive generation. The Critique group
   implements contrastive activation extraction and forward-pass steering. Part of
-  the Vector Lab family of research instruments.
+  the Vector Lab family of research instruments. Built at Copenhagen Business
+  School, Denmark, during an Otto Mønsted Visiting Professorship in 2026. The
+  support of the Otto Mønsted Fond (grant 25-12-1849) is gratefully
+  acknowledged.
 type: software
 authors:
   - family-names: Berry

@@ -293,7 +293,7 @@ The badge resolves to the most recent archived release. A `CITATION.cff` file at
 
 ## Acknowledgements
 
-Vectorscope was created in 2026 in Copenhagen, Denmark, as part of an Otto Mønsted Visiting Professorship. Thanks to the Otto Mønsted Foundation for its support.
+Built at Copenhagen Business School, Denmark, during an Otto Mønsted Visiting Professorship in 2026. The support of the Otto Mønsted Fond (grant 25-12-1849) is gratefully acknowledged.
 
 Vectorscope shares its editorial design system with [Manifold Atlas](https://github.com/dmberry/manifold-atlas) and [LLMbench](https://github.com/dmberry/LLMbench). The three-group tab navigation, Deep Dive convention, and display-controls layout were refined across those projects and then adapted here. Preset chip conventions and the keyboard-navigation grammar follow the patterns established in LLMbench's Compare mode.
 
