@@ -165,6 +165,7 @@
       <a href="#modes">Modes</a>
       <a href="#example">Example</a>
       <a href="#setup">Setup</a>
+      <a href="#faq">FAQ</a>
       <a href="https://github.com/vector-lab-tools/vectorscope">GitHub</a>
       <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -359,6 +360,36 @@ python main.py                        # restart the backend</pre>
       </ol>
       <p class="lead-in" style="margin-top:18px">If it is not on this page, <a href="https://github.com/vector-lab-tools/vectorscope/issues">open an issue</a> on the tool's repository to report the problem. If you have a fix, a pull request is welcome.</p>
 
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <p class="num">05 · FAQ</p>
+      <h2>About the tool.</h2>
+
+      <h3 style="margin-top:14px">When was Vectorscope first created?</h3>
+      <div class="prose">
+        <p>The first commit is dated 15 April 2026. The Next.js frontend, the FastAPI backend and the first nine operations (Embedding Table, Token Trajectory, Vocabulary Map, Projection Head, Weight Comparison, Layer Probe, Full Trace, Attention Inspector, Manifold Formation) were built that day.</p>
+      </div>
+
+      <h3 style="margin-top:34px">How has it developed?</h3>
+      <div class="prose">
+        <p>Vectorscope came out of David M. Berry's work on a critical theory of vector space, as an instrument for inspecting the geometry of open-weight models directly rather than through commercial embedding APIs. It shares its editorial design system with <a href="https://github.com/vector-lab-tools/LLMbench">LLMbench</a> and <a href="https://github.com/vector-lab-tools/manifold-atlas">Manifold Atlas</a>, the other early Vector Lab instruments.</p>
+        <ol class="steps" style="margin-top:16px">
+          <li><b>15 to 17 April 2026, v0.2.</b> Scaffold and core operations, the Generation Vector view, model-loading and precision reporting, an editable preset catalogue in <span class="mono">backend/config/models.md</span>.</li>
+          <li><b>17 April, v0.3.</b> Precision Degradation, for comparing a model's geometry across numerical precisions.</li>
+          <li><b>23 April, v0.4.</b> Export to JSON, CSV, PNG and PDF from every operation.</li>
+          <li><b>24 April, v0.5 and v0.6.</b> Grammar Steering: contrastive activation extraction, then forward-pass intervention.</li>
+          <li><b>25 October, v0.7.0.</b> Relicensed from MIT to GPL-3.0-or-later, covering all earlier versions.</li>
+          <li><b>27 October, v0.7.1 to v0.7.3.</b> This documentation site, a <span class="mono">CITATION.cff</span>, and the first release archived on Zenodo with a DOI.</li>
+        </ol>
+      </div>
+
+      <h3 style="margin-top:34px">Where is the code?</h3>
+      <div class="prose">
+        <p>Source: <a href="https://github.com/vector-lab-tools/vectorscope">github.com/vector-lab-tools/vectorscope</a>. Releases: <a href="https://github.com/vector-lab-tools/vectorscope/releases">releases</a>. Full history: <a href="https://github.com/vector-lab-tools/vectorscope/commits/main">commit log</a>. Problems: <a href="https://github.com/vector-lab-tools/vectorscope/issues">issues</a>. Archived releases: <a href="https://doi.org/10.5281/zenodo.23715047">Zenodo</a>. Questions shared across the family are answered in the <a href="https://vector-lab-tools.github.io/faq.html">Vector Lab FAQ</a>.</p>
+      </div>
     </div>
   </section>
 
