@@ -20,6 +20,7 @@
 **Version:** 0.7.3
 **Date:** 27 October 2026
 **Docs:** [vector-lab-tools.github.io/vectorscope](https://vector-lab-tools.github.io/vectorscope/)
+**FAQ:** [Vector Lab FAQ](https://vector-lab-tools.github.io/faq.html) (API keys, Hugging Face tokens, local models, common setup problems across the family)
 **Licence:** GNU General Public License, version 3 or later (GPL-3.0-or-later). See `LICENSE`; the relicensing notice is in `NOTICE`. All prior versions are retroactively relicensed under the same terms.
 **Archive:** Each tagged release is archived on Zenodo and assigned a version DOI; the badge above resolves to the latest.
 
@@ -185,7 +186,7 @@ Once the status bar shows the model is loaded, pick an operation from the **Insp
 - **`EADDRINUSE: port 3000 already in use`.** Another Next.js dev server is running. Stop it, or start this one with `PORT=3001 npm run dev`.
 - **Frontend says "Backend unreachable".** The backend is not running, or started on a non-default port. Confirm [http://localhost:8000/status](http://localhost:8000/status) returns JSON.
 - **Out of memory.** Pick a smaller preset. GPT-2 runs comfortably in 8 GB; anything above 1B parameters wants 16 GB or more.
-- **Llama / Mistral 403 on download.** Gated. Accept the licence on the HuggingFace model page, then `pip install huggingface_hub && huggingface-cli login` inside the activated backend venv.
+- **Llama / Mistral 403 on download.** Gated. Accept the licence on the HuggingFace model page, then `pip install huggingface_hub && huggingface-cli login` inside the activated backend venv. Full walkthrough in the [Vector Lab FAQ](https://vector-lab-tools.github.io/faq.html) and on the [docs page](https://vector-lab-tools.github.io/vectorscope/#keys).
 - **Slow generation on Apple Silicon.** Confirm MPS is in use (the backend logs the device at startup, and the header indicator reports it). If it reports `cpu`, your PyTorch build is CPU-only; reinstall from [pytorch.org](https://pytorch.org/get-started/locally/).
 
 ## Architecture
