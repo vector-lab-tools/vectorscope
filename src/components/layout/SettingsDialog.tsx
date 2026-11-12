@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings, X } from "lucide-react";
 import { useModel } from "@/context/ModelContext";
 
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
   const { backendStatus } = useModel();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <>
@@ -19,19 +26,19 @@ export default function SettingsDialog() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30" onClick={() => setOpen(false)}>
           <div
-            className="bg-ivory border border-parchment-dark rounded-lg shadow-editorial-lg max-w-sm w-full mx-4 p-6"
+            className="bg-ivory border border-parchment-dark rounded-lg shadow-editorial-lg max-w-sm w-full max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-parchment shrink-0">
               <h2 className="font-display text-display-md">Settings</h2>
-              <button onClick={() => setOpen(false)} className="text-slate hover:text-burgundy">
+              <button onClick={() => setOpen(false)} className="text-slate hover:text-burgundy" aria-label="Close settings">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-6">
               {/* Backend status */}
               <section>
                 <h3 className="font-display text-heading-sm font-semibold mb-3">Backend</h3>

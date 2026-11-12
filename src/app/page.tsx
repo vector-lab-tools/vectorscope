@@ -92,7 +92,14 @@ function VectorscopeApp() {
           className="fixed inset-0 z-40 bg-black/30 flex items-start justify-center overflow-y-auto py-8"
           onClick={() => setPickerOpen(false)}
         >
-          <div onClick={e => e.stopPropagation()} className="w-full">
+          <div
+            onClick={e => {
+              e.stopPropagation();
+              const card = (e.target as HTMLElement).closest(".card-editorial");
+              if (!card) setPickerOpen(false);
+            }}
+            className="w-full"
+          >
             <ModelLoader
               onLoaded={() => setPickerOpen(false)}
               onClose={() => setPickerOpen(false)}
