@@ -38,7 +38,7 @@ Vectorscope emerges from the convergence of three research programmes.
 
 **Methodological critique of commercial APIs.** Commercial embedding APIs do not give researchers what they think they give them. They return sentence-level composite vectors from a separately trained embedding model, not the internal representations of the generative model itself. The outputs are doubly mediated: first by the embedding model's own training objective, then by the API's post-processing. Open-weight models with accessible architectures are the methodologically stronger route for studying how language models organise meaning. Vectorscope is the practical implementation of that critique.
 
-**Signal degradation as critical method.** This includes systematic testing of inputs across models at different precision regimes (FP32 → BF16 → INT8 → INT4 → FP4 → INT2), observing how signal degrades as the medium is compressed. Vectorscope's Precision Degradation operation (forthcoming) implements this method directly, treating quantisation not as an engineering optimisation but as a critical lens on the material substrate.
+**Signal degradation as critical method.** This includes systematic testing of inputs across models at different precision regimes (FP32 → BF16 → INT8 → INT4 → FP4 → INT2), observing how signal degrades as the medium is compressed. Vectorscope's Precision Degradation operation (added in v0.3.0) implements this method directly, treating quantisation not as an engineering optimisation but as a critical lens on the material medium.
 
 ## Vectors, Layers, and the Manifold: A Primer
 
@@ -292,6 +292,8 @@ If Vectorscope is useful for your work, please cite the archived release:
 The badge resolves to the most recent archived release. A `CITATION.cff` file at the repository root carries the same metadata in machine-readable form; GitHub picks it up for the "Cite this repository" button, and Zenodo reads it when minting each version DOI.
 
 ## Acknowledgements
+
+Vectorscope was created in 2026 in Copenhagen, Denmark, as part of an Otto Mønsted Visiting Professorship. Thanks to the Otto Mønsted Foundation for its support.
 
 Vectorscope shares its editorial design system with [Manifold Atlas](https://github.com/dmberry/manifold-atlas) and [LLMbench](https://github.com/dmberry/LLMbench). The three-group tab navigation, Deep Dive convention, and display-controls layout were refined across those projects and then adapted here. Preset chip conventions and the keyboard-navigation grammar follow the patterns established in LLMbench's Compare mode.
 
