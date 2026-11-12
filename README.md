@@ -189,6 +189,8 @@ Once the status bar shows the model is loaded, pick an operation from the **Insp
 - **Llama / Mistral 403 on download.** Gated. Accept the licence on the HuggingFace model page, then `pip install huggingface_hub && huggingface-cli login` inside the activated backend venv. Full walkthrough in the [Vector Lab FAQ](https://vector-lab-tools.github.io/faq.html) and on the [docs page](https://vector-lab-tools.github.io/vectorscope/#keys).
 - **Slow generation on Apple Silicon.** Confirm MPS is in use (the backend logs the device at startup, and the header indicator reports it). If it reports `cpu`, your PyTorch build is CPU-only; reinstall from [pytorch.org](https://pytorch.org/get-started/locally/).
 
+If it is not on this page, [open an issue](https://github.com/vector-lab-tools/vectorscope/issues) on the tool's repository to report the problem. If you have a fix, a pull request is welcome.
+
 ## Architecture
 
 ```
