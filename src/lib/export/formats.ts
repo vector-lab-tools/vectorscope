@@ -12,6 +12,7 @@
  * the file to the browser's download machinery via an ephemeral anchor.
  */
 import jsPDF from "jspdf";
+import { CITE_LINE } from "@/lib/version";
 
 // ---------------------------------------------------------------------------
 // Filename helpers
@@ -64,7 +65,11 @@ export function downloadBlob(blob: Blob, filename: string): void {
 // ---------------------------------------------------------------------------
 
 export function buildJsonBlob(data: unknown): Blob {
-  const text = JSON.stringify(data, null, 2);
+  const cited =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? { cite: CITE_LINE, ...(data as Record<string, unknown>) }
+      : { cite: CITE_LINE, data };
+  const text = JSON.stringify(cited, null, 2);
   return new Blob([text], { type: "application/json" });
 }
 
@@ -105,7 +110,7 @@ export function buildCsv(tables: CsvTable[]): string {
 }
 
 export function buildCsvBlob(tables: CsvTable[]): Blob {
-  return new Blob([buildCsv(tables)], { type: "text/csv" });
+  return new Blob([`# ${CITE_LINE}\n\n${buildCsv(tables)}`], { type: "text/csv" });
 }
 
 // ---------------------------------------------------------------------------
@@ -178,12 +183,51 @@ export async function buildPngBlob(
   if (images.length === 0) return null;
   // Use the first plot as the single PNG. Multi-plot operations can fall
   // back to PDF which composes them.
-  const dataUrl = images[0].dataUrl;
-  const base64 = dataUrl.split(",")[1];
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: "image/png" });
+  return withCaption(images[0].dataUrl);
+}
+
+async function withCaption(dataUrl: string): Promise<Blob | null> {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+
+  const fontPx = Math.max(12, Math.round(img.width / 110));
+  const pad = Math.round(fontPx * 0.9);
+  const lineH = Math.round(fontPx * 1.35);
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.font = `${fontPx}px sans-serif`;
+  const lines = wrapText(ctx, CITE_LINE, img.width - 2 * pad);
+
+  canvas.width = img.width;
+  canvas.height = img.height + 2 * pad + lines.length * lineH;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+  ctx.font = `${fontPx}px sans-serif`;
+  ctx.fillStyle = "#555555";
+  ctx.textBaseline = "top";
+  lines.forEach((line, i) => ctx.fillText(line, pad, img.height + pad + i * lineH));
+
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +266,7 @@ export async function buildPdfBlob(bundle: PdfBundle): Promise<Blob> {
     const prevSize = doc.getFontSize();
     doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
-    const label = bundle.footer ?? "Vectorscope — Vector Lab";
+    const label = bundle.footer ?? "Vectorscope · Vector Lab";
     const page = `${doc.getCurrentPageInfo().pageNumber}`;
     doc.text(label, MARGIN, PAGE_H - MARGIN / 2);
     doc.text(page, PAGE_W - MARGIN, PAGE_H - MARGIN / 2, { align: "right" });
@@ -322,6 +366,20 @@ export async function buildPdfBlob(bundle: PdfBundle): Promise<Blob> {
       ensureSpace(12);
       doc.text(line, MARGIN, y);
       y += 12;
+    }
+    doc.setTextColor(0, 0, 0);
+  }
+
+  // Citation
+  {
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(CITE_LINE, PAGE_W - 2 * MARGIN);
+    ensureSpace(lines.length * 11 + 14);
+    y += 6;
+    doc.setTextColor(90, 90, 90);
+    for (const line of lines) {
+      doc.text(line, MARGIN, y);
+      y += 11;
     }
     doc.setTextColor(0, 0, 0);
   }

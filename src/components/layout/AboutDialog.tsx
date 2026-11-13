@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Info, X } from "lucide-react";
-import { VERSION, APP_NAME, APP_TAGLINE } from "@/lib/version";
+import { VERSION, APP_NAME, APP_TAGLINE, CITE_LINE } from "@/lib/version";
 
 export default function AboutDialog() {
   const [open, setOpen] = useState(false);
@@ -103,6 +103,10 @@ export default function AboutDialog() {
                 <a href="https://github.com/vector-lab-tools/LLMbench" target="_blank" rel="noopener noreferrer" className="hover:underline">LLMbench</a>.
               </p>
             </div>
+
+            <hr className="my-4 border-parchment-dark" />
+
+            <p className="font-sans text-xs text-slate select-text">{CITE_LINE}</p>
 
             <hr className="my-4 border-parchment-dark" />
 
