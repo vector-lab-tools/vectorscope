@@ -70,11 +70,11 @@
   .theme-toggle { background: none; border: 1px solid var(--rule); border-radius: 8px; color: var(--muted); width: 36px; height: 34px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
   .theme-toggle:hover { color: var(--accent-text); border-color: var(--accent); }
   .theme-toggle svg { width: 18px; height: 18px; }
-  .icon-sun { display: block; }
-  .icon-moon { display: none; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon-moon { display: block; } :root:not([data-theme="light"]) .icon-sun { display: none; } }
-  :root[data-theme="dark"] .icon-moon { display: block; } :root[data-theme="dark"] .icon-sun { display: none; }
-  @media (max-width: 640px) { .hide-sm { display: none; } }
+  .icon-moon { display: block; }
+  .icon-sun { display: none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon-sun { display: block; } :root:not([data-theme="light"]) .icon-moon { display: none; } }
+  :root[data-theme="dark"] .icon-sun { display: block; } :root[data-theme="dark"] .icon-moon { display: none; }
+  @media (max-width: 640px) { .hide-sm { display: none; } .site-nav { gap: 14px; } }
 
   /* Hero */
   .hero { border-bottom: 1px solid var(--rule); }
@@ -172,7 +172,7 @@
       <a class="hide-sm" href="#modes">Modes</a>
       <a class="hide-sm" href="#example">Example</a>
       <a href="#setup">Setup</a>
-      <a class="hide-sm" href="#faq">FAQ</a>
+      <a href="#faq">FAQ</a>
       <a href="https://github.com/vector-lab-tools/vectorscope">GitHub</a>
       <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
